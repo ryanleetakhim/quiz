@@ -3,13 +3,20 @@ import { useGame } from "../context/GameContext";
 import { GAME_CONSTANTS } from "../utils/constants";
 
 const EndingScreen = () => {
-    const { state, dispatch } = useGame();
+    const { state, leaveRoom } = useGame();
 
     // Sort players by score
     const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
 
     const handleReturnToRoom = () => {
-        dispatch({ type: "RETURN_TO_ROOM" });
+        // Return to room functionality is handled by the server
+        // Since we're using sockets, we just navigate back to the room screen
+        window.location.reload(); // Simplest way to reset the game state
+    };
+
+    const handleReturnToHome = () => {
+        // Leave the room completely
+        leaveRoom();
     };
 
     return (
@@ -32,7 +39,10 @@ const EndingScreen = () => {
                                 >
                                     <div className="position">{index + 1}</div>
                                     <div className="player-name">
-                                        {player.name}
+                                        {player.name}{" "}
+                                        {player.id === state.playerId
+                                            ? "(你)"
+                                            : ""}
                                     </div>
                                     <div className="player-score">
                                         {player.score} 分
@@ -52,10 +62,14 @@ const EndingScreen = () => {
                                     >
                                         <div className="position">
                                             {index +
-                                                GAME_CONSTANTS.PODIUM_OFFSET}
+                                                GAME_CONSTANTS.PODIUM_SIZE +
+                                                1}
                                         </div>
                                         <div className="player-name">
-                                            {player.name}
+                                            {player.name}{" "}
+                                            {player.id === state.playerId
+                                                ? "(你)"
+                                                : ""}
                                         </div>
                                         <div className="player-score">
                                             {player.score} 分
@@ -67,11 +81,19 @@ const EndingScreen = () => {
                 </div>
 
                 <div className="ending-actions">
+                    {state.isHost && (
+                        <button
+                            className="btn-primary"
+                            onClick={handleReturnToRoom}
+                        >
+                            重新開始
+                        </button>
+                    )}
                     <button
-                        className="btn-primary"
-                        onClick={handleReturnToRoom}
+                        className="btn-secondary"
+                        onClick={handleReturnToHome}
                     >
-                        返回房間
+                        返回首頁
                     </button>
                 </div>
             </div>

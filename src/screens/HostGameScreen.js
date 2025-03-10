@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useGame } from "../context/GameContext";
 import { useQuestionData } from "../data/questionBank";
 import { GAME_CONSTANTS } from "../utils/constants";
@@ -13,7 +13,7 @@ const TopicItem = ({ topic, isSelected, onClick }) => (
 );
 
 const HostGameScreen = () => {
-    const { dispatch, createBotPlayer } = useGame();
+    const { state, createRoom, clearError } = useGame();
     const [roomName, setRoomName] = useState("");
     const [isPrivate, setIsPrivate] = useState(false);
     const [password, setPassword] = useState("");
@@ -27,11 +27,18 @@ const HostGameScreen = () => {
     // Use the hook to get topics
     const { topics, loading } = useQuestionData();
 
-    // Remove debug logs in production
-    // useEffect(() => {
-    //     console.log("Topics loaded:", topics);
-    //     console.log("Selected topics:", selectedTopics);
-    // }, [topics, selectedTopics]);
+    // Clear any global errors when component mounts
+    useEffect(() => {
+        clearError();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty dependency array - will only run once on mount
+
+    // Show error from state if present
+    useEffect(() => {
+        if (state.error) {
+            setError(state.error);
+        }
+    }, [state.error]);
 
     const handleTopicToggle = (topicId) => {
         if (selectedTopics.includes(topicId)) {
@@ -62,72 +69,23 @@ const HostGameScreen = () => {
             return;
         }
 
-        dispatch({
-            type: "UPDATE_HOST_SETTINGS",
-            payload: { roomName, isPrivate, password, maxPlayers, hostName },
+        // Create room via socket connection
+        createRoom({
+            roomName,
+            isPrivate,
+            password,
+            maxPlayers,
+            hostName,
+            selectedTopics,
         });
-
-        dispatch({ type: "SET_SELECTED_TOPICS", payload: selectedTopics });
-
-        // Create room and store host ID
-        dispatch({ type: "CREATE_ROOM" });
-        localStorage.setItem("currentPlayerId", "host");
-
-        // Add bot players automatically
-        addBotPlayers(maxPlayers);
-    };
-
-    // Function to add bot players
-    const addBotPlayers = (maxPlayers) => {
-        const botNames = [
-            "智多星",
-            "問答王",
-            "學霸",
-            "知識通",
-            "數學迷",
-            "歷史通",
-            "科學家",
-        ];
-
-        // Randomly decide how many bots to add
-        const numBots = Math.min(
-            Math.floor(
-                Math.random() *
-                    (GAME_CONSTANTS.BOT.MAX_BOTS -
-                        GAME_CONSTANTS.BOT.MIN_BOTS +
-                        1)
-            ) + GAME_CONSTANTS.BOT.MIN_BOTS,
-            maxPlayers - 1 // Leave room for the host
-        );
-
-        // Shuffle bot names to get random ones
-        const shuffledNames = [...botNames].sort(() => 0.5 - Math.random());
-
-        // Add the bots with slight delays to simulate joining
-        for (let i = 0; i < numBots; i++) {
-            const botName = shuffledNames[i];
-            const botPlayer = createBotPlayer(botName, `bot-${i}`);
-
-            // Add bot with a slight delay to simulate joining
-            setTimeout(() => {
-                dispatch({ type: "ADD_PLAYER", payload: botPlayer });
-
-                // Make bot get ready after a random delay
-                setTimeout(() => {
-                    dispatch({
-                        type: "TOGGLE_PLAYER_READY",
-                        payload: botPlayer.id,
-                    });
-                }, (i + 1) * GAME_CONSTANTS.BOT.READY_DELAY_MIN + Math.random() * (GAME_CONSTANTS.BOT.READY_DELAY_MAX - GAME_CONSTANTS.BOT.READY_DELAY_MIN));
-            }, i * GAME_CONSTANTS.BOT.JOIN_DELAY);
-        }
     };
 
     const handleCancel = () => {
-        dispatch({ type: "NAVIGATE", payload: "welcome" });
+        // Navigate back to welcome screen
+        window.location.href = "/";
     };
 
-    // Simplify loading condition - can be combined with the empty check below
+    // Simplify loading condition
     if (loading || !topics || topics.length === 0) {
         return (
             <div className="host-screen">
@@ -233,7 +191,7 @@ const HostGameScreen = () => {
                         <div className="selected-topics-box">
                             {selectedTopics.length === 0 ? (
                                 <p className="empty-message">
-                                    拖曳或點擊主題來選擇
+                                    請點擊主題來選擇
                                 </p>
                             ) : (
                                 <div className="selected-topics-list">

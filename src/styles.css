@@ -13,10 +13,11 @@
     --border: #ddd;
 }
 
+/* Base styles */
 * {
-    box-sizing: border-box;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 body {
@@ -27,7 +28,7 @@ body {
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
     background: white;
@@ -35,15 +36,21 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
+h1,
+h2,
+h3 {
+    margin-bottom: 15px;
+}
+
 /* Buttons */
 button {
     cursor: pointer;
-    padding: 10px 20px;
+    padding: 10px 15px;
     border: none;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 16px;
     font-weight: 500;
-    transition: all 0.016s ease;
+    transition: background-color 0.3s;
 }
 
 .btn-primary {
@@ -68,6 +75,12 @@ button {
 
 .btn-secondary:hover {
     background-color: #f0f5ff;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .btn-settings {
@@ -150,6 +163,7 @@ input:focus {
     align-items: center;
     min-height: 100vh;
     background: linear-gradient(135deg, #4a86e8, #6aa84f);
+    text-align: center;
 }
 
 .welcome-container {
@@ -171,6 +185,11 @@ input:focus {
 .game-subtitle {
     color: #666;
     margin-bottom: 30px;
+}
+
+.button-container button {
+    padding: 12px 20px;
+    font-size: 18px;
 }
 
 /* Host Game Screen */
@@ -267,6 +286,170 @@ input:focus {
 }
 
 /* Join Game Screen */
+.join-game-screen {
+    min-height: 100vh;
+    padding: 20px 0;
+    background-color: #f5f5f5;
+}
+
+.join-game-screen .container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+}
+
+.join-type-selector {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.join-type-button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #666;
+    position: relative;
+}
+
+.join-type-button.active {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.join-type-button.active::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #4caf50;
+}
+
+.room-list {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.room-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.room-item:last-child {
+    border-bottom: none;
+}
+
+.room-item:hover {
+    background-color: #f9f9f9;
+}
+
+.room-item.selected {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.room-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.room-host,
+.room-players {
+    font-size: 14px;
+    color: #666;
+}
+
+.no-rooms-message {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.join-form {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.refresh-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.btn-refresh {
+    background-color: #2196f3;
+    color: white;
+}
+
+.btn-refresh:hover {
+    background-color: #0b7dda;
+}
+
+.connection-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.connection-status.connected {
+    background-color: #e8f5e9;
+    color: #388e3c;
+}
+
+.connection-status.disconnected {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.status-icon {
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.connection-status.connected .status-icon {
+    color: #388e3c;
+}
+
+.connection-status.disconnected .status-icon {
+    color: #c62828;
+}
+
 .room-list-section {
     margin: 20px 0;
 }
@@ -274,7 +457,7 @@ input:focus {
 .room-list {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: 15px;
 }
 
 .room-list th,
@@ -285,21 +468,21 @@ input:focus {
 }
 
 .room-list th {
-    background-color: #f5f5f5;
+    background-color: var(--bg-light);
     font-weight: 500;
 }
 
 .room-list tr {
     cursor: pointer;
-    transition: background-color 0.016s ease;
+    transition: background-color 0.2s;
 }
 
 .room-list tr:hover {
-    background-color: #f0f5ff;
+    background-color: rgba(74, 134, 232, 0.05);
 }
 
 .room-list tr.selected {
-    background-color: rgba(74, 134, 232, 0.1);
+    background-color: rgba(74, 134, 232, 0.15);
 }
 
 .modal-overlay {
@@ -308,29 +491,29 @@ input:focus {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.5);
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     z-index: 1000;
 }
 
 .modal {
     background-color: white;
-    border-radius: 10px;
-    padding: 25px;
+    border-radius: 8px;
+    padding: 20px;
     width: 90%;
     max-width: 400px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .modal h3 {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     color: var(--primary);
 }
 
 .modal p {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 /* Room Screen */
@@ -651,6 +834,30 @@ input:focus {
     background-color: rgba(255, 149, 0, 0.2);
 }
 
+.timer-container {
+    margin: 10px 0;
+    width: 100%;
+}
+
+.timer-label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.time-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.time-progress {
+    height: 100%;
+    transition: width 0.1s linear;
+}
+
 /* Ending Screen */
 .final-results {
     margin: 30px 0;
@@ -899,6 +1106,92 @@ input:focus {
     color: var(--error);
 }
 
+.appeal-voting {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(74, 134, 232, 0.1);
+    border-radius: 8px;
+}
+
+.appeal-info h3 {
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+.appeal-question {
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.appeal-row {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.appeal-row .label {
+    min-width: 80px;
+    font-weight: 500;
+}
+
+.vote-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.btn-accept {
+    background-color: #4caf50;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-reject {
+    background-color: #f44336;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.vote-status {
+    margin: 10px 0;
+    font-style: italic;
+}
+
+.vote-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.vote-count {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.vote-count.accept {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+}
+
+.vote-count.reject {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: #c62828;
+}
+
+.votes-remaining {
+    font-size: 14px;
+    color: #666;
+}
+
 /* Next question button after appeal */
 .next-question-container {
     margin-top: 15px;
@@ -919,6 +1212,49 @@ input:focus {
     background-color: var(--primary-dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Add styling for the next question button */
+.next-question-controls {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.answer-display {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+/* Connection status indicator */
+.connection-status {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.connection-status.connected {
+    background-color: rgba(0, 128, 0, 0.2);
+    color: #006400;
+}
+
+.connection-status.disconnected {
+    background-color: rgba(255, 0, 0, 0.2);
+    color: #8b0000;
+}
+
+.status-icon {
+    font-size: 10px;
 }
 
 /* Responsive adjustments */

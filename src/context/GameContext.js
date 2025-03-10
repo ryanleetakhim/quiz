@@ -1,8 +1,18 @@
-import React, { createContext, useContext, useReducer, useEffect } from "react";
+import React, {
+    createContext,
+    useContext,
+    useReducer,
+    useEffect,
+    useCallback,
+} from "react";
 import { generateQuestions } from "../data/questionBank";
 import { GAME_CONSTANTS } from "../utils/constants";
+import io from "socket.io-client";
 
 const GameContext = createContext();
+
+// Socket.io connection
+const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:3001");
 
 // Initial game state
 const initialState = {
@@ -28,27 +38,14 @@ const initialState = {
     appealingAnswer: null,
     appealVotes: {},
     appealPassed: null,
-    hasBeenAppealed: false, // Add this flag
+    hasBeenAppealed: false,
+    roomId: null,
+    availableRooms: [],
+    socketConnected: false,
+    isHost: false,
+    playerId: null,
+    error: null,
 };
-
-// Bot players behavior simulation
-const createBotPlayer = (name, id) => ({
-    id,
-    name,
-    isBot: true,
-    isReady: false,
-    score: 0,
-    responseSpeed:
-        Math.random() *
-            (GAME_CONSTANTS.BOT.MAX_RESPONSE_TIME -
-                GAME_CONSTANTS.BOT.MIN_RESPONSE_TIME) +
-        GAME_CONSTANTS.BOT.MIN_RESPONSE_TIME,
-    correctnessRate:
-        Math.random() *
-            (GAME_CONSTANTS.BOT.MAX_CORRECTNESS_RATE -
-                GAME_CONSTANTS.BOT.MIN_CORRECTNESS_RATE) +
-        GAME_CONSTANTS.BOT.MIN_CORRECTNESS_RATE,
-});
 
 // Game state reducer
 function gameReducer(state, action) {
@@ -56,54 +53,89 @@ function gameReducer(state, action) {
         case "NAVIGATE":
             return { ...state, currentScreen: action.payload };
 
+        case "SET_SOCKET_CONNECTED":
+            return { ...state, socketConnected: true, playerId: socket.id };
+
         case "UPDATE_HOST_SETTINGS":
             return { ...state, ...action.payload };
 
         case "SET_SELECTED_TOPICS":
             return { ...state, selectedTopics: action.payload };
 
-        case "CREATE_ROOM":
+        case "SET_AVAILABLE_ROOMS":
+            return { ...state, availableRooms: action.payload };
+
+        case "SET_PLAYER_NAME":
+            return { ...state, playerName: action.payload };
+
+        case "SET_ERROR":
+            return { ...state, error: action.payload };
+
+        case "CLEAR_ERROR":
+            return { ...state, error: null };
+
+        case "ROOM_CREATED":
             return {
                 ...state,
                 currentScreen: "room",
-                players: [
-                    {
-                        id: "host",
-                        name: state.hostName,
-                        isHost: true,
-                        isReady: true,
-                        score: 0,
-                    },
-                ],
+                roomId: action.payload.roomId,
+                roomName: action.payload.room.name,
+                players: action.payload.room.players,
+                selectedTopics: action.payload.room.selectedTopics,
+                isHost: true,
             };
 
-        case "ADD_PLAYER":
-            if (state.players.length >= state.maxPlayers) return state;
+        case "JOINED_ROOM":
             return {
                 ...state,
-                players: [...state.players, action.payload],
+                currentScreen: "room",
+                roomId: action.payload.roomId,
+                roomName: action.payload.room.name,
+                players: action.payload.room.players,
+                selectedTopics: action.payload.room.selectedTopics,
+                isHost: false,
             };
 
-        case "TOGGLE_PLAYER_READY":
+        case "PLAYER_JOINED":
             return {
                 ...state,
-                players: state.players.map((player) =>
-                    player.id === action.payload
-                        ? { ...player, isReady: !player.isReady }
-                        : player
-                ),
+                players: action.payload.players,
+            };
+
+        case "PLAYER_LEFT":
+            return {
+                ...state,
+                players: action.payload.players,
+            };
+
+        case "HOST_CHANGED":
+            return {
+                ...state,
+                players: action.payload.players,
+                isHost: action.payload.newHostId === socket.id,
+            };
+
+        case "PLAYER_UPDATED":
+            return {
+                ...state,
+                players: action.payload.players,
             };
 
         case "START_GAME":
-            // Generate questions here to ensure they're available for all players
-            const gameQuestions = generateQuestions(
-                state.selectedTopics,
-                GAME_CONSTANTS.QUESTIONS_PER_GAME
-            );
+            // Just send selected topics - the server will generate or receive questions
+            socket.emit("startGame", {
+                gameQuestions: generateQuestions(
+                    state.selectedTopics,
+                    GAME_CONSTANTS.QUESTIONS_PER_GAME
+                ),
+            });
+            return state;
+
+        case "GAME_STARTED":
             return {
                 ...state,
                 currentScreen: "game",
-                gameQuestions,
+                gameQuestions: action.payload.gameState.gameQuestions,
                 currentQuestionIndex: 0,
                 players: state.players.map((player) => ({
                     ...player,
@@ -124,89 +156,75 @@ function gameReducer(state, action) {
             };
 
         case "ANSWER_QUESTION":
+            socket.emit("answerQuestion");
+            return state;
+
+        case "QUESTION_ANSWERING":
             return {
                 ...state,
-                answeringPlayerId: action.payload,
+                answeringPlayerId: action.payload.playerId,
                 showAnswer: false,
             };
 
         case "SUBMIT_ANSWER":
-            const currentQuestion =
-                state.gameQuestions[state.currentQuestionIndex];
-            const isCorrect = action.payload === currentQuestion.answer;
+            socket.emit("submitAnswer", { answer: action.payload });
+            return state;
 
+        case "ANSWER_SUBMITTED":
             return {
                 ...state,
-                submittedAnswer: action.payload,
-                correctAnswer: currentQuestion.answer,
-                answerResult: isCorrect,
+                submittedAnswer: action.payload.gameState.submittedAnswer,
+                correctAnswer: action.payload.gameState.correctAnswer,
+                answerResult: action.payload.gameState.answerResult,
                 showAnswer: true,
-                players: state.players.map((player) =>
-                    player.id === state.answeringPlayerId
-                        ? {
-                              ...player,
-                              score: player.score + (isCorrect ? 1 : 0),
-                          }
-                        : player
-                ),
+                players: action.payload.players,
             };
 
         case "APPEAL_ANSWER":
+            socket.emit("appealAnswer");
+            return state;
+
+        case "APPEAL_STARTED":
             return {
                 ...state,
                 appealInProgress: true,
-                appealPlayerId: state.answeringPlayerId,
-                appealingAnswer: state.submittedAnswer,
+                appealPlayerId: action.payload.gameState.appealPlayerId,
+                appealingAnswer: action.payload.gameState.appealingAnswer,
                 appealVotes: {},
                 appealPassed: null,
-                hasBeenAppealed: true, // Set the flag when an appeal is made
+                hasBeenAppealed: true,
             };
 
         case "VOTE_ON_APPEAL":
+            socket.emit("voteOnAppeal", { vote: action.payload.vote });
+            return state;
+
+        case "APPEAL_VOTED":
             return {
                 ...state,
-                appealVotes: {
-                    ...state.appealVotes,
-                    [action.payload.playerId]: action.payload.vote,
-                },
+                appealVotes: action.payload.gameState.appealVotes,
             };
 
-        case "RESOLVE_APPEAL":
-            // Count votes
-            const votes = Object.values(state.appealVotes);
-            const acceptVotes = votes.filter((v) => v === "accept").length;
-            const rejectVotes = votes.filter((v) => v === "reject").length;
-            // Abstain votes don't count towards either side
-            const appealPassed = acceptVotes >= rejectVotes;
-
-            // Update player score if appeal passed
-            const updatedPlayers = state.players.map((player) =>
-                player.id === state.appealPlayerId && appealPassed
-                    ? { ...player, score: player.score + 1 }
-                    : player
-            );
-
+        case "APPEAL_RESOLVED":
             return {
                 ...state,
                 appealInProgress: false,
-                appealPassed: appealPassed,
-                answerResult: appealPassed ? true : state.answerResult,
-                players: updatedPlayers,
+                appealPassed: action.payload.gameState.appealPassed,
+                answerResult: action.payload.gameState.answerResult,
+                players: action.payload.players,
             };
 
         case "NEXT_QUESTION":
-            const nextIndex = state.currentQuestionIndex + 1;
-            if (nextIndex >= state.gameQuestions.length) {
-                return {
-                    ...state,
-                    currentScreen: "ending",
-                    gameEnded: true,
-                };
+            if (state.isHost) {
+                socket.emit("nextQuestion");
             }
+            return state;
 
+        case "QUESTION_ADVANCED":
             return {
                 ...state,
-                currentQuestionIndex: nextIndex,
+                currentQuestionIndex:
+                    action.payload.gameState.currentQuestionIndex,
                 answeringPlayerId: null,
                 submittedAnswer: null,
                 correctAnswer: null,
@@ -217,7 +235,15 @@ function gameReducer(state, action) {
                 appealingAnswer: null,
                 appealVotes: {},
                 appealPassed: null,
-                hasBeenAppealed: false, // Reset the flag for new question
+                hasBeenAppealed: false,
+            };
+
+        case "GAME_ENDED":
+            return {
+                ...state,
+                currentScreen: "ending",
+                gameEnded: true,
+                players: action.payload.players,
             };
 
         case "RETURN_TO_ROOM":
@@ -229,28 +255,19 @@ function gameReducer(state, action) {
                 ),
             };
 
-        // Fix the issue with the joined player by ensuring game questions are generated
-        case "CREATE_JOINED_ROOM":
+        case "LEAVE_ROOM":
+            socket.emit("leaveRoom");
             return {
                 ...state,
-                currentScreen: "room",
-                players: [
-                    {
-                        id: "host",
-                        name: state.hostName,
-                        isHost: true,
-                        isReady: true, // Host is always ready
-                        isBot: true, // Mark host as bot for automation
-                        score: 0,
-                    },
-                ],
+                currentScreen: "welcome",
+                roomId: null,
+                players: [],
+                isHost: false,
             };
 
-        case "SET_GAME_QUESTIONS":
-            return {
-                ...state,
-                gameQuestions: action.payload,
-            };
+        case "TOGGLE_PLAYER_READY":
+            socket.emit("toggleReady");
+            return state;
 
         default:
             return state;
@@ -260,132 +277,217 @@ function gameReducer(state, action) {
 export const GameProvider = ({ children }) => {
     const [state, dispatch] = useReducer(gameReducer, initialState);
 
-    // Simulate bot behavior
+    // Set up socket event listeners
     useEffect(() => {
-        if (
-            state.currentScreen !== "game" ||
-            state.showAnswer ||
-            state.answeringPlayerId ||
-            !state.gameQuestions ||
-            state.gameQuestions.length === 0 ||
-            state.currentQuestionIndex >= state.gameQuestions.length
-        )
-            return;
+        // Define event handler functions OUTSIDE the effect body
+        const handleRoomCreated = (data) => {
+            dispatch({ type: "ROOM_CREATED", payload: data });
+        };
 
-        const botTimers = state.players
-            .filter((player) => player.isBot)
-            .map((bot) => {
-                return setTimeout(() => {
-                    // Bot decides to answer or not
-                    if (Math.random() > GAME_CONSTANTS.BOT.ANSWER_PROBABILITY)
-                        return;
+        const handlePlayerJoined = (data) => {
+            dispatch({ type: "PLAYER_JOINED", payload: data });
+        };
 
-                    // Bot answers the question
-                    dispatch({ type: "ANSWER_QUESTION", payload: bot.id });
+        const handlePlayerLeft = (data) => {
+            dispatch({ type: "PLAYER_LEFT", payload: data });
+        };
 
-                    // Bot submits an answer after thinking
-                    setTimeout(() => {
-                        const currentQuestion =
-                            state.gameQuestions[state.currentQuestionIndex];
+        const handleHostChanged = (data) => {
+            dispatch({ type: "HOST_CHANGED", payload: data });
+        };
 
-                        if (!currentQuestion) return; // Safety check
+        const handlePlayerUpdated = (data) => {
+            dispatch({ type: "PLAYER_UPDATED", payload: data });
+        };
 
-                        const isCorrectAnswer =
-                            Math.random() < bot.correctnessRate;
-                        const botAnswer = isCorrectAnswer
-                            ? currentQuestion.answer
-                            : `錯誤答案${Math.floor(Math.random() * 100)}`;
+        // Add debugging for game events
+        const handleGameStarted = (data) => {
+            console.log("Game started event received:", data);
 
-                        dispatch({ type: "SUBMIT_ANSWER", payload: botAnswer });
-
-                        // Move to next question after delay
-                        setTimeout(() => {
-                            dispatch({ type: "NEXT_QUESTION" });
-                        }, GAME_CONSTANTS.NEXT_QUESTION_DELAY);
-                    }, GAME_CONSTANTS.BOT.THINKING_TIME_MIN + Math.random() * (GAME_CONSTANTS.BOT.THINKING_TIME_MAX - GAME_CONSTANTS.BOT.THINKING_TIME_MIN));
-                }, bot.responseSpeed);
-            });
-
-        return () => botTimers.forEach((timer) => clearTimeout(timer));
-    }, [
-        state.currentScreen,
-        state.currentQuestionIndex,
-        state.showAnswer,
-        state.answeringPlayerId,
-        state.gameQuestions,
-        state.players,
-    ]);
-
-    // Bot voting on appeals - completely decouple from automatic advancement
-    useEffect(() => {
-        if (!state.appealInProgress) return;
-
-        const botVoters = state.players.filter(
-            (player) => player.isBot && player.id !== state.appealPlayerId
-        );
-
-        // Have bots vote after a short delay
-        const votingTimers = botVoters.map((bot) => {
-            return setTimeout(() => {
-                // Chance of accepting an appeal as specified
-                const vote =
-                    Math.random() < GAME_CONSTANTS.BOT.APPEAL_ACCEPT_PROBABILITY
-                        ? "accept"
-                        : "reject";
-
-                // Just dispatch the vote - don't handle timer or advancement logic
+            if (
+                !data.gameState ||
+                !Array.isArray(data.gameState.gameQuestions) ||
+                data.gameState.gameQuestions.length === 0
+            ) {
+                console.error("Invalid game state received:", data);
                 dispatch({
-                    type: "VOTE_ON_APPEAL",
-                    payload: { playerId: bot.id, vote },
+                    type: "SET_ERROR",
+                    payload: "無效的遊戲數據。請重新開始遊戲。",
                 });
+                return;
+            }
 
-                // No vote resolution or advancement logic here
-                // Let the GameScreen component handle all of this
-            }, GAME_CONSTANTS.BOT.VOTING_DELAY_MIN + Math.random() * (GAME_CONSTANTS.BOT.VOTING_DELAY_MAX - GAME_CONSTANTS.BOT.VOTING_DELAY_MIN));
+            dispatch({ type: "GAME_STARTED", payload: data });
+        };
+
+        const handleQuestionAnswering = (data) => {
+            dispatch({ type: "QUESTION_ANSWERING", payload: data });
+        };
+
+        const handleAnswerSubmitted = (data) => {
+            dispatch({ type: "ANSWER_SUBMITTED", payload: data });
+        };
+
+        const handleAppealStarted = (data) => {
+            dispatch({ type: "APPEAL_STARTED", payload: data });
+        };
+
+        const handleAppealVoted = (data) => {
+            dispatch({ type: "APPEAL_VOTED", payload: data });
+        };
+
+        const handleAppealResolved = (data) => {
+            dispatch({ type: "APPEAL_RESOLVED", payload: data });
+        };
+
+        const handleNextQuestion = (data) => {
+            dispatch({ type: "QUESTION_ADVANCED", payload: data });
+        };
+
+        const handleGameEnded = (data) => {
+            dispatch({ type: "GAME_ENDED", payload: data });
+        };
+
+        // Connection events
+        socket.on("connect", () => {
+            console.log("Connected to server");
+            dispatch({ type: "SET_SOCKET_CONNECTED" });
         });
 
-        return () => votingTimers.forEach((timer) => clearTimeout(timer));
-    }, [state.appealInProgress, state.appealPlayerId, state.players]);
+        socket.on("disconnect", () => {
+            console.log("Disconnected from server");
+            dispatch({ type: "SET_SOCKET_CONNECTED", payload: false });
+        });
 
-    // Add this new effect to help debug the game state
-    useEffect(() => {
-        if (state.currentScreen === "game") {
-            // Log for debugging
-            console.log("Game state:", {
-                questions: state.gameQuestions?.length || 0,
-                currentIndex: state.currentQuestionIndex,
-                currentQuestion:
-                    state.gameQuestions?.[state.currentQuestionIndex],
-            });
+        // Error handling
+        socket.on("error", (data) => {
+            console.error("Socket error:", data.message);
+            dispatch({ type: "SET_ERROR", payload: data.message });
+        });
 
-            // If the game has started but there are no questions, generate them
-            if (!state.gameQuestions || state.gameQuestions.length === 0) {
-                if (state.selectedTopics && state.selectedTopics.length > 0) {
-                    const questions = generateQuestions(
-                        state.selectedTopics,
-                        GAME_CONSTANTS.QUESTIONS_PER_GAME
-                    );
+        // Room events
+        socket.on("roomList", (rooms) => {
+            dispatch({ type: "SET_AVAILABLE_ROOMS", payload: rooms });
+        });
 
-                    dispatch({
-                        type: "SET_GAME_QUESTIONS",
-                        payload: questions,
-                    });
-                } else {
-                    console.error(
-                        "No topics selected, cannot generate questions"
-                    );
-                }
+        socket.on("roomCreated", handleRoomCreated);
+        socket.on("joinedRoom", (data) => {
+            dispatch({ type: "JOINED_ROOM", payload: data });
+        });
+
+        socket.on("playerJoined", handlePlayerJoined);
+        socket.on("playerLeft", handlePlayerLeft);
+        socket.on("hostChanged", handleHostChanged);
+        socket.on("playerUpdated", handlePlayerUpdated);
+
+        // Game events
+        socket.on("gameStarted", handleGameStarted);
+        socket.on("questionAnswering", handleQuestionAnswering);
+        socket.on("answerSubmitted", handleAnswerSubmitted);
+        socket.on("appealStarted", handleAppealStarted);
+        socket.on("appealVoted", handleAppealVoted);
+        socket.on("appealResolved", handleAppealResolved);
+        socket.on("nextQuestion", handleNextQuestion);
+        socket.on("gameEnded", handleGameEnded);
+
+        // Get available rooms on connection
+        socket.emit("getRoomList");
+
+        // Clean up event listeners on unmount
+        return () => {
+            socket.off("connect");
+            socket.off("disconnect");
+            socket.off("error");
+            socket.off("roomList");
+            socket.off("roomCreated", handleRoomCreated);
+            socket.off("joinedRoom");
+            socket.off("playerJoined", handlePlayerJoined);
+            socket.off("playerLeft", handlePlayerLeft);
+            socket.off("hostChanged", handleHostChanged);
+            socket.off("playerUpdated", handlePlayerUpdated);
+            socket.off("gameStarted", handleGameStarted);
+            socket.off("questionAnswering", handleQuestionAnswering);
+            socket.off("answerSubmitted", handleAnswerSubmitted);
+            socket.off("appealStarted", handleAppealStarted);
+            socket.off("appealVoted", handleAppealVoted);
+            socket.off("appealResolved", handleAppealResolved);
+            socket.off("nextQuestion", handleNextQuestion);
+            socket.off("gameEnded", handleGameEnded);
+        };
+    }, []);
+
+    // Helper functions for API calls
+    const createRoom = (roomData) => {
+        socket.emit("createRoom", roomData);
+    };
+
+    const joinRoom = (roomId, playerName, password = "") => {
+        socket.emit("joinRoom", {
+            roomId,
+            playerName,
+            password,
+        });
+    };
+
+    const toggleReady = () => {
+        socket.emit("toggleReady");
+    };
+
+    // Update the startGame function to add better error handling
+    const startGame = () => {
+        try {
+            const questions = generateQuestions(
+                state.selectedTopics,
+                GAME_CONSTANTS.QUESTIONS_PER_GAME
+            );
+
+            if (!questions || questions.length === 0) {
+                dispatch({
+                    type: "SET_ERROR",
+                    payload: "無法生成問題。請確保至少選擇了一個主題。",
+                });
+                return;
             }
+
+            console.log(`Starting game with ${questions.length} questions`);
+            socket.emit("startGame", { gameQuestions: questions });
+        } catch (error) {
+            console.error("Error starting game:", error);
+            dispatch({
+                type: "SET_ERROR",
+                payload: "啟動遊戲時發生錯誤，請重試。",
+            });
         }
-    }, [
-        state.currentScreen,
-        state.gameQuestions,
-        state.currentQuestionIndex,
-        state.selectedTopics,
-    ]);
+    };
+
+    const leaveRoom = () => {
+        dispatch({ type: "LEAVE_ROOM" });
+    };
+
+    // Add fetchAvailableRooms function
+    const fetchAvailableRooms = useCallback(() => {
+        socket.emit("fetchRooms");
+    }, []);
+
+    // Wrap clearError with useCallback to maintain stable reference
+    const clearError = useCallback(() => {
+        dispatch({ type: "CLEAR_ERROR" });
+    }, []);
 
     return (
-        <GameContext.Provider value={{ state, dispatch, createBotPlayer }}>
+        <GameContext.Provider
+            value={{
+                state,
+                dispatch,
+                createRoom,
+                joinRoom,
+                toggleReady,
+                startGame,
+                leaveRoom,
+                clearError,
+                fetchAvailableRooms,
+            }}
+        >
             {children}
         </GameContext.Provider>
     );

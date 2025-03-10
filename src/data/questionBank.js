@@ -44,12 +44,17 @@ export const useQuestionData = () => {
 // Export the topics and questionData for immediate access
 export const { topics, questionData } = loadedData;
 
-// Enhanced function to generate questions with optional difficulty filter
+// Enhanced function to generate questions with better error handling
 export const generateQuestions = (
     selectedTopics,
     count,
     difficultyFilter = null
 ) => {
+    if (!selectedTopics || selectedTopics.length === 0) {
+        console.error("No topics selected for question generation");
+        return [];
+    }
+
     const allQuestions = [];
 
     // Collect questions from selected topics
@@ -65,12 +70,23 @@ export const generateQuestions = (
             allQuestions.push(
                 ...topicQuestions.map((q) => ({ ...q, topic: topicId }))
             );
+        } else {
+            console.warn(`Topic ${topicId} not found in question data`);
         }
     });
+
+    if (allQuestions.length === 0) {
+        console.error("No questions found for the selected topics");
+        return [];
+    }
+
+    console.log(`Generated ${allQuestions.length} questions before shuffling`);
 
     // Shuffle questions
     const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
 
     // Return requested number of questions (or all if fewer available)
-    return shuffled.slice(0, count);
+    const result = shuffled.slice(0, count);
+    console.log(`Returning ${result.length} questions after slicing`);
+    return result;
 };

@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useGame } from "../context/GameContext";
 import { GAME_CONSTANTS } from "../utils/constants";
 
-const PlayerCard = ({ player, isUser, onToggleReady }) => (
+const PlayerCard = ({ player, isCurrentPlayer, isHost, onToggleReady }) => (
     <div
         className={`player-card ${player.isReady ? "ready" : ""} ${
             player.isHost ? "host" : ""
         }`}
     >
-        <div className="player-name">{player.name}</div>
+        <div className="player-name">
+            {player.name} {isCurrentPlayer ? "(你)" : ""}
+        </div>
         <div className="player-status">
             {player.isHost ? (
                 <span className="host-badge">房主</span>
@@ -23,10 +25,10 @@ const PlayerCard = ({ player, isUser, onToggleReady }) => (
             )}
         </div>
 
-        {!player.isHost && isUser && (
+        {!player.isHost && isCurrentPlayer && (
             <button
                 className={`ready-button ${player.isReady ? "cancel" : ""}`}
-                onClick={() => onToggleReady(player.id)}
+                onClick={onToggleReady}
             >
                 {player.isReady ? "取消準備" : "準備"}
             </button>
@@ -35,77 +37,51 @@ const PlayerCard = ({ player, isUser, onToggleReady }) => (
 );
 
 const RoomScreen = () => {
-    const { state, dispatch } = useGame();
-    const [allReady, setAllReady] = useState(false);
+    const { state, toggleReady, startGame, leaveRoom, clearError } = useGame();
 
-    // Find the user player (using localStorage ID)
-    const userPlayerId = localStorage.getItem("currentPlayerId");
-    const userPlayer = state.players.find(
-        (player) => player.id === userPlayerId
-    );
-    const isHost = userPlayer?.isHost || false;
+    // Clear any errors when component mounts
+    useEffect(() => {
+        clearError();
+    }, [clearError]);
 
     // Check if all non-host players are ready
-    useEffect(() => {
+    const allPlayersReady = () => {
         const nonHostPlayers = state.players.filter((player) => !player.isHost);
-        const allPlayersReady = nonHostPlayers.every(
-            (player) => player.isReady
+        return (
+            nonHostPlayers.length > 0 &&
+            nonHostPlayers.every((player) => player.isReady)
         );
-        setAllReady(allPlayersReady && nonHostPlayers.length > 0);
+    };
 
-        // Simulate bot players toggling ready state
-        const interval = setInterval(() => {
-            state.players.forEach((player) => {
-                if (
-                    player.isBot &&
-                    !player.isHost && // Don't toggle ready for host bot
-                    !player.isReady &&
-                    Math.random() > GAME_CONSTANTS.BOT.READY_PROBABILITY
-                ) {
-                    dispatch({
-                        type: "TOGGLE_PLAYER_READY",
-                        payload: player.id,
-                    });
-                }
-            });
-        }, GAME_CONSTANTS.BOT.READY_DELAY_MIN);
-
-        // If all players are ready and the host is a bot, simulate host starting the game
-        if (allPlayersReady && state.players.find((p) => p.isHost && p.isBot)) {
-            const hostStartTimeout = setTimeout(() => {
-                dispatch({ type: "START_GAME" });
-            }, GAME_CONSTANTS.HOST_START_GAME_DELAY || 3000); // Default 3 seconds
-
-            return () => {
-                clearInterval(interval);
-                clearTimeout(hostStartTimeout);
-            };
-        }
-
-        return () => clearInterval(interval);
-    }, [state.players, dispatch]);
-
-    const handleToggleReady = (playerId) => {
-        dispatch({ type: "TOGGLE_PLAYER_READY", payload: playerId });
+    const handleToggleReady = () => {
+        toggleReady();
     };
 
     const handleStartGame = () => {
-        if (isHost) {
-            dispatch({ type: "START_GAME" });
-        }
+        startGame();
     };
 
     const handleLeaveRoom = () => {
-        dispatch({ type: "NAVIGATE", payload: "welcome" });
+        leaveRoom();
     };
+
+    // Find the current player
+    const currentPlayer = state.players.find(
+        (player) => player.id === state.playerId
+    );
 
     return (
         <div className="room-screen">
             <div className="container">
                 <h2>{state.roomName}</h2>
+
+                {state.error && (
+                    <div className="error-message">{state.error}</div>
+                )}
+
                 <div className="room-info">
                     <div className="room-detail">
-                        <span className="label">房主:</span> {state.hostName}
+                        <span className="label">房間ID:</span> {state.roomId}
                     </div>
                     <div className="room-detail">
                         <span className="label">玩家:</span>{" "}
@@ -124,7 +100,8 @@ const RoomScreen = () => {
                             <PlayerCard
                                 key={player.id}
                                 player={player}
-                                isUser={player.id === userPlayer?.id}
+                                isCurrentPlayer={player.id === state.playerId}
+                                isHost={state.isHost}
                                 onToggleReady={handleToggleReady}
                             />
                         ))}
@@ -132,17 +109,17 @@ const RoomScreen = () => {
                 </div>
 
                 <div className="room-actions">
-                    {isHost ? (
+                    {state.isHost ? (
                         <button
                             className="btn-primary start-button"
                             onClick={handleStartGame}
-                            disabled={!allReady}
+                            disabled={!allPlayersReady()}
                         >
                             開始遊戲
                         </button>
                     ) : (
                         <div className="waiting-message">
-                            {allReady
+                            {allPlayersReady()
                                 ? "所有玩家已準備，等待房主開始遊戲..."
                                 : "等待所有玩家準備好..."}
                         </div>
