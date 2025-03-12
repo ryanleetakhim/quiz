@@ -17,7 +17,7 @@ const TypewriterEffect = ({ text, onInterrupt }) => {
         // Type out text character by character
         const interval = setInterval(() => {
             if (charIndex.current < text.length) {
-                setDisplayedText((prev) => prev + text[charIndex.current]);
+                setDisplayedText(text.substring(0, charIndex.current + 1));
                 charIndex.current++;
             } else {
                 clearInterval(interval);
@@ -126,11 +126,33 @@ const GameScreen = () => {
         dispatch({ type: "APPEAL_ANSWER" });
     };
 
+    // Calculate if appeal should pass based on current votes plus new vote
+    const calculateAppealResult = (newVote) => {
+        // Copy current votes and add the new vote
+        const allVotes = { ...state.appealVotes, [state.playerId]: newVote };
+        const votes = Object.values(allVotes);
+        const acceptCount = votes.filter((v) => v === "accept").length;
+        const rejectCount = votes.filter((v) => v === "reject").length;
+
+        // Check if all eligible voters have voted
+        const eligibleVoters = state.players.filter(
+            (p) => p.id !== state.appealPlayerId
+        ).length;
+        const allVoted = votes.length >= eligibleVoters;
+
+        // Appeal passes if majority voted to accept
+        const shouldPass = acceptCount > rejectCount;
+
+        return { shouldPass, allVoted };
+    };
+
     // Handle voting on appeal
     const handleVoteOnAppeal = (vote) => {
+        const { shouldPass, allVoted } = calculateAppealResult(vote);
+
         dispatch({
             type: "VOTE_ON_APPEAL",
-            payload: { vote },
+            payload: { vote, shouldPass, allVoted },
         });
     };
 

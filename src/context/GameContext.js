@@ -12,7 +12,7 @@ import io from "socket.io-client";
 const GameContext = createContext();
 
 // Socket.io connection
-const socket = io(process.env.REACT_APP_SOCKET_URL || "http://localhost:3001");
+const socket = io("http://192.168.0.23:3001");
 
 // Initial game state
 const initialState = {
@@ -196,7 +196,11 @@ function gameReducer(state, action) {
             };
 
         case "VOTE_ON_APPEAL":
-            socket.emit("voteOnAppeal", { vote: action.payload.vote });
+            socket.emit("voteOnAppeal", {
+                vote: action.payload.vote,
+                shouldPass: action.payload.shouldPass,
+                allVoted: action.payload.allVoted,
+            });
             return state;
 
         case "APPEAL_VOTED":
