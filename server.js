@@ -172,6 +172,9 @@ io.on("connection", (socket) => {
         )
             return;
 
+        // Broadcast to all clients that typewriter should stop
+        io.to(roomId).emit("typewriterInterrupted");
+
         room.gameState.answeringPlayerId = socket.id;
 
         io.to(roomId).emit("questionAnswering", {

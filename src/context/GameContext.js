@@ -45,6 +45,7 @@ const initialState = {
     isHost: false,
     playerId: null,
     error: null,
+    typewriterInterrupted: false, // Add this new state
 };
 
 // Game state reducer
@@ -159,11 +160,18 @@ function gameReducer(state, action) {
             socket.emit("answerQuestion");
             return state;
 
+        case "TYPEWRITER_INTERRUPTED":
+            return {
+                ...state,
+                typewriterInterrupted: true,
+            };
+
         case "QUESTION_ANSWERING":
             return {
                 ...state,
                 answeringPlayerId: action.payload.playerId,
                 showAnswer: false,
+                typewriterInterrupted: true, // Set this to true when someone answers
             };
 
         case "SUBMIT_ANSWER":
@@ -244,6 +252,7 @@ function gameReducer(state, action) {
                 appealVotes: {},
                 appealPassed: null,
                 hasBeenAppealed: false,
+                typewriterInterrupted: false, // Reset typewriter state for new question
             };
 
         case "GAME_ENDED":
@@ -398,6 +407,11 @@ export const GameProvider = ({ children }) => {
         socket.on("nextQuestion", handleNextQuestion);
         socket.on("gameEnded", handleGameEnded);
 
+        // Add a new event listener for typewriter interruption
+        socket.on("typewriterInterrupted", () => {
+            dispatch({ type: "TYPEWRITER_INTERRUPTED" });
+        });
+
         // Get available rooms on connection
         socket.emit("getRoomList");
 
@@ -421,6 +435,7 @@ export const GameProvider = ({ children }) => {
             socket.off("appealResolved", handleAppealResolved);
             socket.off("nextQuestion", handleNextQuestion);
             socket.off("gameEnded", handleGameEnded);
+            socket.off("typewriterInterrupted");
         };
     }, []);
 

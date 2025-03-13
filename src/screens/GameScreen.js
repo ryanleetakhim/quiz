@@ -7,6 +7,7 @@ const TypewriterEffect = ({ text, onInterrupt }) => {
     const [isComplete, setIsComplete] = useState(false);
     const intervalRef = useRef(null);
     const charIndex = useRef(0);
+    const { state } = useGame(); // Access the global game state
 
     useEffect(() => {
         // Reset when text changes
@@ -30,10 +31,20 @@ const TypewriterEffect = ({ text, onInterrupt }) => {
         return () => clearInterval(interval);
     }, [text]);
 
+    // Add effect to respond to global typewriter interrupt
+    useEffect(() => {
+        if (state.typewriterInterrupted && !isComplete) {
+            clearInterval(intervalRef.current);
+            // Don't set displayedText to full text, just stop the animation
+            // and keep the currently displayed partial text
+            setIsComplete(true);
+        }
+    }, [state.typewriterInterrupted, isComplete, text]);
+
     const handleClick = () => {
         if (!isComplete) {
             clearInterval(intervalRef.current);
-            setDisplayedText(text);
+            // Don't set the full text, just keep what's already shown
             setIsComplete(true);
             if (onInterrupt) onInterrupt();
         }
