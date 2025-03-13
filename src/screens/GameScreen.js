@@ -190,6 +190,31 @@ const GameScreen = () => {
         );
     };
 
+    // Modify the timer effect to handle timeout
+    useEffect(() => {
+        if (state.answeringPlayerId && !state.showAnswer) {
+            setTimeLeft(GAME_CONSTANTS.ANSWER_TIME_LIMIT);
+
+            timerRef.current = setInterval(() => {
+                setTimeLeft((prevTime) => {
+                    if (prevTime <= 1) {
+                        clearInterval(timerRef.current);
+                        // Automatically handle timeout - the player ran out of time
+                        if (state.answeringPlayerId === state.playerId) {
+                            dispatch({
+                                type: "TIMEOUT_ANSWER",
+                            });
+                        }
+                        return 0;
+                    }
+                    return prevTime - 1;
+                });
+            }, 1000);
+
+            return () => clearInterval(timerRef.current);
+        }
+    }, [state.answeringPlayerId, state.showAnswer, state.playerId, dispatch]);
+
     if (!currentQuestion) {
         return (
             <div className="game-screen">

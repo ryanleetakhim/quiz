@@ -170,6 +170,10 @@ function gameReducer(state, action) {
             socket.emit("submitAnswer", { answer: action.payload });
             return state;
 
+        case "TIMEOUT_ANSWER":
+            socket.emit("timeoutAnswer");
+            return state;
+
         case "ANSWER_SUBMITTED":
             return {
                 ...state,

@@ -216,6 +216,38 @@ io.on("connection", (socket) => {
         });
     });
 
+    // Handle answer timeout
+    socket.on("timeoutAnswer", () => {
+        const roomId = socket.roomId;
+        if (!roomId || !rooms[roomId]) return;
+
+        const room = rooms[roomId];
+        if (
+            room.gameState.status !== "playing" ||
+            room.gameState.answeringPlayerId !== socket.id
+        )
+            return;
+
+        const currentQuestion =
+            room.gameState.gameQuestions[room.gameState.currentQuestionIndex];
+
+        // Timeout is always incorrect
+        const isCorrect = false;
+
+        room.gameState = {
+            ...room.gameState,
+            submittedAnswer: "(時間到)",
+            correctAnswer: currentQuestion.answer,
+            answerResult: isCorrect,
+            showAnswer: true,
+        };
+
+        io.to(roomId).emit("answerSubmitted", {
+            gameState: room.gameState,
+            players: room.players,
+        });
+    });
+
     // Handle appeal
     socket.on("appealAnswer", () => {
         const roomId = socket.roomId;
