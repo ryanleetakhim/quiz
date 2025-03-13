@@ -134,4 +134,5 @@ const RoomScreen = () => {
     );
 };
 
+// Make sure the component is properly exported
 export default RoomScreen;

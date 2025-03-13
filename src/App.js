@@ -3,7 +3,7 @@ import { GameProvider, useGame } from "./context/GameContext";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import HostGameScreen from "./screens/HostGameScreen";
 import JoinGameScreen from "./screens/JoinGameScreen";
-import RoomScreen from "./screens/RoomScreen";
+import RoomScreen from "./screens/RoomScreen"; // Make sure this path is correct
 import GameScreen from "./screens/GameScreen";
 import EndingScreen from "./screens/EndingScreen";
 import "./styles.css";

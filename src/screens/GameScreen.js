@@ -64,24 +64,25 @@ const GameScreen = () => {
     const timerRef = useRef(null);
     const [loadingError, setLoadingError] = useState(false);
 
+    // Add a function to get better color transitions for the timer
+    const getTimerColor = (time) => {
+        const totalTime = GAME_CONSTANTS.ANSWER_TIME_LIMIT;
+        const percentRemaining = time / totalTime;
+
+        if (percentRemaining <= 0.25) {
+            return "#FF0000"; // Bright red when very low
+        } else if (percentRemaining <= 0.5) {
+            return "#FFA500"; // Orange when getting low
+        } else {
+            return "#00CC00"; // Green when plenty of time
+        }
+    };
+
     const currentQuestion =
         state.gameQuestions && state.gameQuestions.length > 0
             ? state.gameQuestions[state.currentQuestionIndex]
             : null;
     const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
-
-    // Add loading timeout effect
-    useEffect(() => {
-        // If questions don't load within 5 seconds, show an error
-        const timeout = setTimeout(() => {
-            if (!currentQuestion) {
-                setLoadingError(true);
-                console.error("Failed to load questions:", state.gameQuestions);
-            }
-        }, 5000);
-
-        return () => clearTimeout(timeout);
-    }, [currentQuestion, state.gameQuestions]);
 
     // Determine if current player is answering
     const isAnswering = state.answeringPlayerId === state.playerId;
@@ -97,7 +98,6 @@ const GameScreen = () => {
     const startTimer = (duration, onComplete) => {
         clearInterval(timerRef.current);
         setTimeLeft(duration);
-
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
@@ -127,7 +127,6 @@ const GameScreen = () => {
     const handleSubmitAnswer = (e) => {
         e.preventDefault();
         clearInterval(timerRef.current);
-
         dispatch({ type: "SUBMIT_ANSWER", payload: answer.trim() });
         setAnswer("");
     };
@@ -160,7 +159,6 @@ const GameScreen = () => {
     // Handle voting on appeal
     const handleVoteOnAppeal = (vote) => {
         const { shouldPass, allVoted } = calculateAppealResult(vote);
-
         dispatch({
             type: "VOTE_ON_APPEAL",
             payload: { vote, shouldPass, allVoted },
@@ -265,7 +263,6 @@ const GameScreen = () => {
                     </h2>
                     <div className="topic-tag">{currentQuestion.topic}</div>
                 </div>
-
                 <div className="game-layout">
                     <div className="player-rankings">
                         <h3>玩家排名</h3>
@@ -293,7 +290,6 @@ const GameScreen = () => {
                             ))}
                         </div>
                     </div>
-
                     <div className="question-section">
                         <div className="question-container">
                             {/* Question display */}
@@ -331,9 +327,7 @@ const GameScreen = () => {
 
                                     {timeLeft !== null && (
                                         <div className="timer-container">
-                                            <div className="timer-label">
-                                                {timeLeft}秒
-                                            </div>
+                                            {/* Remove the timer-label div that displays seconds */}
                                             <div className="time-bar">
                                                 <div
                                                     className="time-progress"
@@ -344,9 +338,11 @@ const GameScreen = () => {
                                                             100
                                                         }%`,
                                                         backgroundColor:
-                                                            timeLeft < 5
-                                                                ? "red"
-                                                                : "green",
+                                                            getTimerColor(
+                                                                timeLeft
+                                                            ),
+                                                        transition:
+                                                            "width 1s linear, background-color 1s ease-in-out",
                                                     }}
                                                 ></div>
                                             </div>
@@ -517,7 +513,6 @@ const GameScreen = () => {
                                             </div>
                                         )}
 
-                                        {/* Vote counts */}
                                         <div className="vote-counts">
                                             <div className="vote-count accept">
                                                 {getVoteCounts().accept} 同意

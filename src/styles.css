@@ -693,28 +693,23 @@ input:focus {
 /* Timer styles */
 .timer-container {
     width: 100%;
-    height: 10px;
+    height: 15px;
     background-color: #e0e0e0;
-    border-radius: 4px;
-    margin: 10px 0;
+    border-radius: 10px;
+    margin: 15px 0;
     overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
 }
 
 .time-bar {
     height: 100%;
-    background-color: var(--primary);
-    transition: width 0.05s linear;
+    width: 100%;
 }
 
 .time-progress {
     height: 100%;
-    transition: width 0.1s linear;
-}
-
-.timer-label {
-    font-size: 14px;
-    margin-bottom: 5px;
-    text-align: center;
+    border-radius: 10px;
+    transition: width 1s linear, background-color 1s ease-in-out;
 }
 
 /* Appeal system styles */
