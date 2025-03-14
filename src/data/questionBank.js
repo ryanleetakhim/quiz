@@ -1,12 +1,42 @@
-import rawQuestions from "./questionsData";
+import Papa from "papaparse";
+import { useState, useEffect } from "react";
 
-// Initialize with data from our embedded questions
-const processInitialData = () => {
+// Function to load questions from CSV
+const loadQuestionsFromCSV = async () => {
     try {
-        // Extract unique topics from the raw questions
+        const response = await fetch("/questions.csv");
+        const csvText = await response.text();
+
+        return new Promise((resolve, reject) => {
+            Papa.parse(csvText, {
+                header: true,
+                complete: (results) => {
+                    if (results.errors.length > 0) {
+                        console.warn("CSV parsing had errors:", results.errors);
+                    }
+                    resolve(results.data);
+                },
+                error: (error) => {
+                    console.error("Error parsing CSV:", error);
+                    reject(error);
+                },
+            });
+        });
+    } catch (error) {
+        console.error("Error fetching CSV:", error);
+        throw error;
+    }
+};
+
+// Process the data from CSV into our application format
+const processQuestionData = async () => {
+    try {
+        const rawQuestions = await loadQuestionsFromCSV();
+
+        // Extract unique topics
         const uniqueTopics = [...new Set(rawQuestions.map((q) => q.topic))];
 
-        // Create topics array
+        // Format topics for UI
         const extractedTopics = uniqueTopics.map((topic) => ({
             id: topic,
             name: topic,
@@ -20,7 +50,7 @@ const processInitialData = () => {
                 .map((q) => ({
                     question: q.question,
                     answer: q.answer,
-                    difficulty: q.difficulty,
+                    difficulty: q.difficulty || "medium",
                 }));
         });
 
@@ -34,17 +64,53 @@ const processInitialData = () => {
     }
 };
 
-const loadedData = processInitialData();
+// State to track if data is ready
+let dataLoaded = false;
+let loadedData = { topics: [], questionData: {} };
 
-// Simplified hook - no need for useState or loading states since data is embedded
+// Load data immediately
+(async () => {
+    try {
+        loadedData = await processQuestionData();
+        dataLoaded = true;
+        console.log(
+            `Loaded ${loadedData.topics.length} topics with questions from CSV`
+        );
+    } catch (error) {
+        console.error("Failed to initialize question data:", error);
+    }
+})();
+
+// Hook for React components - now properly handles loading state
 export const useQuestionData = () => {
-    return { ...loadedData, loading: false };
+    const [data, setData] = useState({
+        topics: [],
+        questionData: {},
+        loading: true,
+    });
+
+    useEffect(() => {
+        // If data is already loaded, update state immediately
+        if (dataLoaded) {
+            setData({ ...loadedData, loading: false });
+            return;
+        }
+
+        // Otherwise, set up a poller to check for data
+        const checkDataLoaded = setInterval(() => {
+            if (dataLoaded) {
+                setData({ ...loadedData, loading: false });
+                clearInterval(checkDataLoaded);
+            }
+        }, 100);
+
+        return () => clearInterval(checkDataLoaded);
+    }, []);
+
+    return data;
 };
 
-// Export the topics and questionData for immediate access
-export const { topics, questionData } = loadedData;
-
-// Enhanced function to generate questions with better error handling
+// Generate questions function with better error handling
 export const generateQuestions = (
     selectedTopics,
     count,
@@ -55,17 +121,25 @@ export const generateQuestions = (
         return [];
     }
 
+    // Check if data is loaded
+    if (!dataLoaded) {
+        console.error(
+            "Question data not loaded yet! Please try again in a moment."
+        );
+        return [];
+    }
+
     const allQuestions = [];
 
     // Collect questions from selected topics
     selectedTopics.forEach((topicId) => {
-        if (questionData[topicId]) {
+        if (loadedData.questionData[topicId]) {
             // Filter by difficulty if specified
             const topicQuestions = difficultyFilter
-                ? questionData[topicId].filter(
+                ? loadedData.questionData[topicId].filter(
                       (q) => q.difficulty === difficultyFilter
                   )
-                : questionData[topicId];
+                : loadedData.questionData[topicId];
 
             allQuestions.push(
                 ...topicQuestions.map((q) => ({ ...q, topic: topicId }))
