@@ -63,6 +63,7 @@ const GameScreen = () => {
     const [timeLeft, setTimeLeft] = useState(null);
     const timerRef = useRef(null);
     const [loadingError, setLoadingError] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Add a function to get better color transitions for the timer
     const getTimerColor = (time) => {
@@ -130,6 +131,7 @@ const GameScreen = () => {
     // Handle submit answer
     const handleSubmitAnswer = (e) => {
         e.preventDefault();
+        setIsSubmitting(true); // Disable button during submission
         clearInterval(timerRef.current);
         dispatch({ type: "SUBMIT_ANSWER", payload: answer.trim() });
         setAnswer("");
@@ -235,6 +237,13 @@ const GameScreen = () => {
         dispatch,
         state.answerTimeLimit,
     ]);
+
+    // Reset submission state when answer result comes back
+    useEffect(() => {
+        if (state.showAnswer) {
+            setIsSubmitting(false);
+        }
+    }, [state.showAnswer]);
 
     if (!currentQuestion) {
         return (
@@ -375,12 +384,16 @@ const GameScreen = () => {
                                                 }
                                                 placeholder="輸入你的答案"
                                                 autoFocus
+                                                disabled={isSubmitting}
                                             />
                                             <button
                                                 className="btn-submit"
                                                 type="submit"
+                                                disabled={isSubmitting}
                                             >
-                                                提交
+                                                {isSubmitting
+                                                    ? "處理中..."
+                                                    : "提交"}
                                             </button>
                                         </form>
                                     )}
