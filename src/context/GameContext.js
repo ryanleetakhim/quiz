@@ -12,7 +12,7 @@ import io from "socket.io-client";
 const GameContext = createContext();
 
 // Socket.io connection
-const socket = io("http://192.168.0.23:3001");
+const socket = io(window.location.origin);
 
 // Initial game state
 const initialState = {
@@ -83,6 +83,7 @@ function gameReducer(state, action) {
                 roomName: action.payload.room.name,
                 players: action.payload.room.players,
                 selectedTopics: action.payload.room.selectedTopics,
+                answerTimeLimit: action.payload.room.answerTimeLimit,
                 isHost: true,
             };
 
@@ -94,6 +95,7 @@ function gameReducer(state, action) {
                 roomName: action.payload.room.name,
                 players: action.payload.room.players,
                 selectedTopics: action.payload.room.selectedTopics,
+                answerTimeLimit: action.payload.room.answerTimeLimit,
                 isHost: false,
             };
 
@@ -188,6 +190,7 @@ function gameReducer(state, action) {
                 submittedAnswer: action.payload.gameState.submittedAnswer,
                 correctAnswer: action.payload.gameState.correctAnswer,
                 answerResult: action.payload.gameState.answerResult,
+                answerExplanation: action.payload.gameState.answerExplanation, // Add this
                 showAnswer: true,
                 players: action.payload.players,
             };

@@ -9,6 +9,8 @@ export const GAME_CONSTANTS = {
     QUESTIONS_PER_GAME: 10,
 
     // Timer settings
+    MIN_ANSWER_TIME: 15, // seconds
+    MAX_ANSWER_TIME: 120, // seconds
     ANSWER_TIME_LIMIT: 30, // seconds
     TIMER_UPDATE_INTERVAL: 50, // More frequent updates (was likely 1000ms)
     TIMER_WIDTH_PERCENT_PER_SECOND: 5, // 5% per second

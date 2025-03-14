@@ -23,6 +23,10 @@ const HostGameScreen = () => {
     const [hostName, setHostName] = useState("");
     const [selectedTopics, setSelectedTopics] = useState([]);
     const [error, setError] = useState("");
+    // Add new state for answer time limit
+    const [answerTimeLimit, setAnswerTimeLimit] = useState(
+        GAME_CONSTANTS.ANSWER_TIME_LIMIT
+    );
 
     // Use the hook to get topics
     const { topics, loading } = useQuestionData();
@@ -69,7 +73,7 @@ const HostGameScreen = () => {
             return;
         }
 
-        // Create room via socket connection
+        // Create room via socket connection, now including answerTimeLimit
         createRoom({
             roomName,
             isPrivate,
@@ -77,6 +81,7 @@ const HostGameScreen = () => {
             maxPlayers,
             hostName,
             selectedTopics,
+            answerTimeLimit,
         });
     };
 
@@ -150,6 +155,20 @@ const HostGameScreen = () => {
                             value={maxPlayers}
                             onChange={(e) =>
                                 setMaxPlayers(parseInt(e.target.value))
+                            }
+                        />
+                    </div>
+
+                    {/* Add new timer control slider */}
+                    <div className="form-group">
+                        <label>答題時間限制: {answerTimeLimit} 秒</label>
+                        <input
+                            type="range"
+                            min={GAME_CONSTANTS.MIN_ANSWER_TIME}
+                            max={GAME_CONSTANTS.MAX_ANSWER_TIME}
+                            value={answerTimeLimit}
+                            onChange={(e) =>
+                                setAnswerTimeLimit(parseInt(e.target.value))
                             }
                         />
                     </div>

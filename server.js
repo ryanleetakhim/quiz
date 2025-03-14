@@ -3,6 +3,8 @@ const http = require("http");
 const socketIo = require("socket.io");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
+const { checkAnswer } = require("./src/services/geminiService");
+require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
@@ -14,13 +16,11 @@ const io = socketIo(server, {
 });
 
 // Serve static files in production
-if (process.env.NODE_ENV === "production") {
-    app.use(express.static(path.join(__dirname, "build")));
+app.use(express.static(path.join(__dirname, "build")));
 
-    app.get("*", (req, res) => {
-        res.sendFile(path.join(__dirname, "build", "index.html"));
-    });
-}
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 // Store active game rooms
 const rooms = {};
@@ -42,6 +42,8 @@ io.on("connection", (socket) => {
             password: data.isPrivate ? data.password : null,
             maxPlayers: data.maxPlayers,
             selectedTopics: data.selectedTopics,
+            answerTimeLimit:
+                data.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT, // Add this line
             players: [
                 {
                     id: socket.id,
@@ -184,7 +186,7 @@ io.on("connection", (socket) => {
     });
 
     // Handle answer submission
-    socket.on("submitAnswer", (data) => {
+    socket.on("submitAnswer", async (data) => {
         const roomId = socket.roomId;
         if (!roomId || !rooms[roomId]) return;
 
@@ -197,26 +199,66 @@ io.on("connection", (socket) => {
 
         const currentQuestion =
             room.gameState.gameQuestions[room.gameState.currentQuestionIndex];
-        const isCorrect = data.answer === currentQuestion.answer;
 
-        // Update player score
-        const player = room.players.find((p) => p.id === socket.id);
-        if (player && isCorrect) {
-            player.score += 1;
+        try {
+            // Use Gemini API to check the answer
+            const answerCheck = await checkAnswer(
+                data.answer,
+                currentQuestion.answer,
+                currentQuestion.question
+            );
+
+            const isCorrect =
+                answerCheck.isCorrect && answerCheck.confidence > 0.7;
+
+            // Update player score
+            const player = room.players.find((p) => p.id === socket.id);
+            if (player && isCorrect) {
+                player.score += 1;
+            }
+
+            room.gameState = {
+                ...room.gameState,
+                submittedAnswer: data.answer,
+                correctAnswer: currentQuestion.answer,
+                answerResult: isCorrect,
+                showAnswer: true,
+                answerExplanation: answerCheck.explanation, // Store the explanation
+            };
+
+            io.to(roomId).emit("answerSubmitted", {
+                gameState: room.gameState,
+                players: room.players,
+            });
+        } catch (error) {
+            console.error("Error processing answer:", error);
+
+            // Fallback to exact matching if API fails
+            const isCorrect =
+                data.answer.toLowerCase().trim() ===
+                currentQuestion.answer.toLowerCase().trim();
+
+            // Update player score
+            const player = room.players.find((p) => p.id === socket.id);
+            if (player && isCorrect) {
+                player.score += 1;
+            }
+
+            room.gameState = {
+                ...room.gameState,
+                submittedAnswer: data.answer,
+                correctAnswer: currentQuestion.answer,
+                answerResult: isCorrect,
+                showAnswer: true,
+                answerExplanation:
+                    "Answer checked by exact matching (API unavailable)",
+            };
+
+            io.to(roomId).emit("answerSubmitted", {
+                gameState: room.gameState,
+                players: room.players,
+            });
         }
-
-        room.gameState = {
-            ...room.gameState,
-            submittedAnswer: data.answer,
-            correctAnswer: currentQuestion.answer,
-            answerResult: isCorrect,
-            showAnswer: true,
-        };
-
-        io.to(roomId).emit("answerSubmitted", {
-            gameState: room.gameState,
-            players: room.players,
-        });
     });
 
     // Handle answer timeout

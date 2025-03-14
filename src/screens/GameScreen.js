@@ -114,12 +114,16 @@ const GameScreen = () => {
     const handleAnswerQuestion = () => {
         if (!state.answeringPlayerId && !state.showAnswer) {
             dispatch({ type: "ANSWER_QUESTION" });
-            startTimer(GAME_CONSTANTS.ANSWER_TIME_LIMIT, () => {
-                // Time's up - submit empty answer
-                if (isAnswering) {
-                    dispatch({ type: "SUBMIT_ANSWER", payload: "" });
+            // Use the room-specific timer setting instead of constant
+            startTimer(
+                state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,
+                () => {
+                    // Time's up - submit empty answer
+                    if (isAnswering) {
+                        dispatch({ type: "SUBMIT_ANSWER", payload: "" });
+                    }
                 }
-            });
+            );
         }
     };
 
@@ -199,10 +203,12 @@ const GameScreen = () => {
         );
     };
 
-    // Modify the timer effect to handle timeout
+    // Modify the timer effect to handle timeout and use room-specific setting
     useEffect(() => {
         if (state.answeringPlayerId && !state.showAnswer) {
-            setTimeLeft(GAME_CONSTANTS.ANSWER_TIME_LIMIT);
+            setTimeLeft(
+                state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT
+            );
 
             timerRef.current = setInterval(() => {
                 setTimeLeft((prevTime) => {
@@ -222,7 +228,13 @@ const GameScreen = () => {
 
             return () => clearInterval(timerRef.current);
         }
-    }, [state.answeringPlayerId, state.showAnswer, state.playerId, dispatch]);
+    }, [
+        state.answeringPlayerId,
+        state.showAnswer,
+        state.playerId,
+        dispatch,
+        state.answerTimeLimit,
+    ]);
 
     if (!currentQuestion) {
         return (
@@ -334,7 +346,8 @@ const GameScreen = () => {
                                                     style={{
                                                         width: `${
                                                             (timeLeft /
-                                                                GAME_CONSTANTS.ANSWER_TIME_LIMIT) *
+                                                                (state.answerTimeLimit ||
+                                                                    GAME_CONSTANTS.ANSWER_TIME_LIMIT)) *
                                                             100
                                                         }%`,
                                                         backgroundColor:
@@ -417,6 +430,18 @@ const GameScreen = () => {
                                             </button>
                                             <div className="appeal-message">
                                                 認為你的答案應該被判為正確嗎？點擊申訴按鈕。
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Add explanation if available */}
+                                    {state.answerExplanation && (
+                                        <div className="answer-explanation">
+                                            <div className="explanation-label">
+                                                Explanation:
+                                            </div>
+                                            <div className="explanation-text">
+                                                {state.answerExplanation}
                                             </div>
                                         </div>
                                     )}
