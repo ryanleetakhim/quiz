@@ -213,8 +213,13 @@ io.on("connection", (socket) => {
 
             // Update player score
             const player = room.players.find((p) => p.id === socket.id);
-            if (player && isCorrect) {
-                player.score += 1;
+            if (player) {
+                if (isCorrect) {
+                    player.score += 1;
+                } else {
+                    // Subtract 1 point for incorrect answer, but don't go below 0
+                    player.score = Math.max(0, player.score - 1);
+                }
             }
 
             room.gameState = {
@@ -240,8 +245,13 @@ io.on("connection", (socket) => {
 
             // Update player score
             const player = room.players.find((p) => p.id === socket.id);
-            if (player && isCorrect) {
-                player.score += 1;
+            if (player) {
+                if (isCorrect) {
+                    player.score += 1;
+                } else {
+                    // Subtract 1 point for incorrect answer, but don't go below 0
+                    player.score = Math.max(0, player.score - 1);
+                }
             }
 
             room.gameState = {
@@ -399,7 +409,8 @@ function resolveAppeal(roomId) {
             (p) => p.id === room.gameState.appealPlayerId
         );
         if (appealingPlayer) {
-            appealingPlayer.score += 1;
+            // Add 2 points: 1 to reverse the deduction and 1 for getting it right
+            appealingPlayer.score += 2;
         }
     }
 

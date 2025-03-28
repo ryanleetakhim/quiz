@@ -95,6 +95,11 @@ const GameScreen = () => {
         state.answeringPlayerId === state.playerId &&
         !state.hasBeenAppealed;
 
+    // NEW: Add handler for finishing the game (for host)
+    const handleFinishGame = () => {
+        dispatch({ type: "END_GAME" });
+    };
+
     // Start timer function
     const startTimer = (duration, onComplete) => {
         clearInterval(timerRef.current);
@@ -273,6 +278,13 @@ const GameScreen = () => {
         state.showAnswer &&
         !state.appealInProgress &&
         state.currentQuestionIndex < state.gameQuestions.length - 1;
+
+    // NEW: Determine if we should show the finish game button (on last question)
+    const showFinishGameButton =
+        state.isHost &&
+        state.showAnswer &&
+        !state.appealInProgress &&
+        state.currentQuestionIndex === state.gameQuestions.length - 1;
 
     return (
         <div className="game-screen">
@@ -467,6 +479,18 @@ const GameScreen = () => {
                                                 onClick={handleNextQuestion}
                                             >
                                                 下一題
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* NEW: Add finish game button for the last question */}
+                                    {showFinishGameButton && (
+                                        <div className="next-question-controls">
+                                            <button
+                                                className="btn-primary"
+                                                onClick={handleFinishGame}
+                                            >
+                                                完成遊戲
                                             </button>
                                         </div>
                                     )}
