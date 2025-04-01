@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useGame } from "../context/GameContext";
-import { GAME_CONSTANTS } from "../utils/constants";
 
-const PlayerCard = ({ player, isCurrentPlayer, isHost, onToggleReady }) => (
+const PlayerCard = ({ player, isCurrentPlayer, onToggleReady }) => (
     <div
         className={`player-card ${player.isReady ? "ready" : ""} ${
             player.isHost ? "host" : ""
@@ -65,11 +64,6 @@ const RoomScreen = () => {
         leaveRoom();
     };
 
-    // Find the current player
-    const currentPlayer = state.players.find(
-        (player) => player.id === state.playerId
-    );
-
     return (
         <div className="room-screen">
             <div className="container">
@@ -98,10 +92,8 @@ const RoomScreen = () => {
                     <div className="player-grid">
                         {state.players.map((player) => (
                             <PlayerCard
-                                key={player.id}
                                 player={player}
                                 isCurrentPlayer={player.id === state.playerId}
-                                isHost={state.isHost}
                                 onToggleReady={handleToggleReady}
                             />
                         ))}

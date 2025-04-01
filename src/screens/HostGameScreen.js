@@ -73,7 +73,7 @@ const HostGameScreen = () => {
             return;
         }
 
-        // Create room via socket connection, now including answerTimeLimit
+        // Create room via socket connection
         createRoom({
             roomName,
             isPrivate,

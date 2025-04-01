@@ -64,10 +64,18 @@ const GameScreen = () => {
     const timerRef = useRef(null);
     const [loadingError, setLoadingError] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    // Add a ref to always have the current answering state
+    const isAnsweringRef = useRef(false);
+
+    // Update ref whenever the answering state changes
+    useEffect(() => {
+        isAnsweringRef.current = state.answeringPlayerId === state.playerId;
+    }, [state.answeringPlayerId, state.playerId]);
 
     // Add a function to get better color transitions for the timer
     const getTimerColor = (time) => {
-        const totalTime = GAME_CONSTANTS.ANSWER_TIME_LIMIT;
+        const totalTime =
+            state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT;
         const percentRemaining = time / totalTime;
 
         if (percentRemaining <= 0.25) {
@@ -124,9 +132,12 @@ const GameScreen = () => {
             startTimer(
                 state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,
                 () => {
-                    // Time's up - submit empty answer
-                    if (isAnswering) {
-                        dispatch({ type: "SUBMIT_ANSWER", payload: "" });
+                    // Time's up - submit empty answer using the current ref value
+                    if (isAnsweringRef.current) {
+                        dispatch({
+                            type: "SUBMIT_ANSWER",
+                            payload: "(未回答)",
+                        });
                     }
                 }
             );
@@ -209,39 +220,6 @@ const GameScreen = () => {
             eligibleVoters.length - Object.keys(state.appealVotes || {}).length
         );
     };
-
-    // Modify the timer effect to handle timeout and use room-specific setting
-    useEffect(() => {
-        if (state.answeringPlayerId && !state.showAnswer) {
-            setTimeLeft(
-                state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT
-            );
-
-            timerRef.current = setInterval(() => {
-                setTimeLeft((prevTime) => {
-                    if (prevTime <= 1) {
-                        clearInterval(timerRef.current);
-                        // Automatically handle timeout - the player ran out of time
-                        if (state.answeringPlayerId === state.playerId) {
-                            dispatch({
-                                type: "TIMEOUT_ANSWER",
-                            });
-                        }
-                        return 0;
-                    }
-                    return prevTime - 1;
-                });
-            }, 1000);
-
-            return () => clearInterval(timerRef.current);
-        }
-    }, [
-        state.answeringPlayerId,
-        state.showAnswer,
-        state.playerId,
-        dispatch,
-        state.answerTimeLimit,
-    ]);
 
     // Reset submission state when answer result comes back
     useEffect(() => {
@@ -426,8 +404,7 @@ const GameScreen = () => {
                                             提交答案:
                                         </div>
                                         <div className="submitted-answer">
-                                            {state.submittedAnswer ||
-                                                "(未回答)"}
+                                            {state.submittedAnswer || ""}
                                         </div>
                                     </div>
                                     <div className="answer-row">

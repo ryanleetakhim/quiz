@@ -9,10 +9,10 @@ export const GAME_CONSTANTS = {
     QUESTIONS_PER_GAME: 10,
 
     // Timer settings
-    MIN_ANSWER_TIME: 15, // seconds
+    MIN_ANSWER_TIME: 30, // seconds
     MAX_ANSWER_TIME: 120, // seconds
     ANSWER_TIME_LIMIT: 30, // seconds
-    TIMER_UPDATE_INTERVAL: 50, // More frequent updates (was likely 1000ms)
+    TIMER_UPDATE_INTERVAL: 50, // ms
     TIMER_WIDTH_PERCENT_PER_SECOND: 5, // 5% per second
     TIMER_DANGER_THRESHOLD: 5, // seconds - when appeal timer turns red
 
@@ -21,9 +21,6 @@ export const GAME_CONSTANTS = {
     TRANSITION_SPEED: "0.1s", // Faster transition between states
     PODIUM_SIZE: 3, // Number of players shown on podium
     PODIUM_OFFSET: 4, // Ranking offset after podium
-
-    // Mock data
-    MOCK_PASSWORD: "1234", // Mock password for demo
 
     // Timings (milliseconds)
     TYPEWRITER_SPEED: 50,
@@ -45,32 +42,5 @@ export const GAME_CONSTANTS = {
         WARNING: "#FFC107", // yellow
         DANGER: "#F44336", // red
         APPEAL: "#9C27B0", // purple
-    },
-
-    // Bot behavior
-    BOT: {
-        MIN_RESPONSE_TIME: 1000,
-        MAX_RESPONSE_TIME: 5000,
-        MIN_CORRECTNESS_RATE: 0.3, // 30%
-        MAX_CORRECTNESS_RATE: 0.9, // 90%
-        THINKING_TIME_MIN: 2000,
-        THINKING_TIME_MAX: 8000,
-        ANSWER_PROBABILITY: 0.7,
-        APPEAL_ACCEPT_PROBABILITY: 0.5,
-        VOTING_DELAY_MIN: 1000,
-        VOTING_DELAY_MAX: 5000,
-        JOIN_DELAY: 1500,
-        READY_DELAY_MIN: 2000,
-        READY_DELAY_MAX: 5000,
-        MIN_BOTS: 1,
-        MAX_BOTS: 5,
-        READY_PROBABILITY: 0.5,
-    },
-
-    // Difficulty levels
-    DIFFICULTY_LEVELS: {
-        EASY: "簡單",
-        MEDIUM: "中等",
-        HARD: "困難",
     },
 };
