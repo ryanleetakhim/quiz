@@ -217,8 +217,7 @@ io.on("connection", (socket) => {
                 if (isCorrect) {
                     player.score += 1;
                 } else {
-                    // Subtract 1 point for incorrect answer, but don't go below 0
-                    player.score = Math.max(0, player.score - 1);
+                    player.score -= 1;
                 }
             }
 
