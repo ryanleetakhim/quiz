@@ -86,6 +86,7 @@ function gameReducer(state, action) {
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
                 difficultyRange: action.payload.room.difficultyRange,
+                maxPlayers: action.payload.room.maxPlayers,
                 isHost: true,
             };
 
@@ -99,6 +100,7 @@ function gameReducer(state, action) {
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
                 difficultyRange: action.payload.room.difficultyRange,
+                maxPlayers: action.payload.room.maxPlayers,
                 isHost: false,
             };
 
