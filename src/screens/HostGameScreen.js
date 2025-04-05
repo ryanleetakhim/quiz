@@ -28,6 +28,10 @@ const HostGameScreen = () => {
         GAME_CONSTANTS.ANSWER_TIME_LIMIT
     );
 
+    // Add new state for difficulty filter
+    const [minDifficulty, setMinDifficulty] = useState(1);
+    const [maxDifficulty, setMaxDifficulty] = useState(10);
+
     // Use the hook to get topics
     const { topics, loading } = useQuestionData();
 
@@ -73,7 +77,7 @@ const HostGameScreen = () => {
             return;
         }
 
-        // Create room via socket connection
+        setError("");
         createRoom({
             roomName,
             isPrivate,
@@ -82,6 +86,10 @@ const HostGameScreen = () => {
             hostName,
             selectedTopics,
             answerTimeLimit,
+            difficultyRange: {
+                min: minDifficulty,
+                max: maxDifficulty,
+            },
         });
     };
 
@@ -171,6 +179,56 @@ const HostGameScreen = () => {
                                 setAnswerTimeLimit(parseInt(e.target.value))
                             }
                         />
+                    </div>
+
+                    {/* Add new difficulty filter sliders */}
+                    <div className="form-group">
+                        <label>
+                            題目難度範圍: {minDifficulty.toFixed(1)} -{" "}
+                            {maxDifficulty.toFixed(1)}
+                        </label>
+                        <div className="difficulty-sliders">
+                            <div className="min-difficulty">
+                                <small>
+                                    最低難度: {minDifficulty.toFixed(1)}
+                                </small>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="10"
+                                    step="0.1"
+                                    value={minDifficulty}
+                                    onChange={(e) => {
+                                        const value = parseFloat(
+                                            e.target.value
+                                        );
+                                        setMinDifficulty(
+                                            Math.min(value, maxDifficulty - 0.1)
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="max-difficulty">
+                                <small>
+                                    最高難度: {maxDifficulty.toFixed(1)}
+                                </small>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="10"
+                                    step="0.1"
+                                    value={maxDifficulty}
+                                    onChange={(e) => {
+                                        const value = parseFloat(
+                                            e.target.value
+                                        );
+                                        setMaxDifficulty(
+                                            Math.max(value, minDifficulty + 0.1)
+                                        );
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="form-group">

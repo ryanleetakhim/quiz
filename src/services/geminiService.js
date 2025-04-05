@@ -17,10 +17,11 @@ async function checkAnswer(userAnswer, correctAnswer, question) {
         const prompt = `
     Question: ${question}
     Correct answer: ${correctAnswer}
-    User answer: ${userAnswer}
+    User answer: "${userAnswer}"
     
     Is the user's answer semantically equivalent to the correct answer? Consider spelling variations, 
-    synonyms, different wordings with the same meaning, etc. Respond only with a JSON object in this format:
+    synonyms, different wordings with the same meaning, etc. Note that the user sometimes may give empty string as answer, please treat it as incorrect.
+    Respond only with a JSON object in this format:
     {
       "isCorrect": true or false,
       "confidence": number between 0 and 1,

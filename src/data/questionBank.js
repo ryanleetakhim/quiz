@@ -51,6 +51,7 @@ const processQuestionData = async () => {
                     question: q.question,
                     answer: q.answer,
                     difficulty: q.difficulty || "medium",
+                    subtopic: q.subtopic || "", // Add subtopic field
                 }));
         });
 
@@ -114,7 +115,7 @@ export const useQuestionData = () => {
 export const generateQuestions = (
     selectedTopics,
     count,
-    difficultyFilter = null
+    difficultyRange = { min: 1, max: 10 }
 ) => {
     if (!selectedTopics || selectedTopics.length === 0) {
         console.error("No topics selected for question generation");
@@ -134,12 +135,16 @@ export const generateQuestions = (
     // Collect questions from selected topics
     selectedTopics.forEach((topicId) => {
         if (loadedData.questionData[topicId]) {
-            // Filter by difficulty if specified
-            const topicQuestions = difficultyFilter
-                ? loadedData.questionData[topicId].filter(
-                      (q) => q.difficulty === difficultyFilter
-                  )
-                : loadedData.questionData[topicId];
+            // Filter by difficulty range if specified
+            const topicQuestions = loadedData.questionData[topicId].filter(
+                (q) => {
+                    const difficulty = parseFloat(q.difficulty || 5);
+                    return (
+                        difficulty >= difficultyRange.min &&
+                        difficulty <= difficultyRange.max
+                    );
+                }
+            );
 
             allQuestions.push(
                 ...topicQuestions.map((q) => ({ ...q, topic: topicId }))

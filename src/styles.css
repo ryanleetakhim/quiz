@@ -528,6 +528,38 @@ input:focus {
     text-align: center;
 }
 
+.game-header h2 {
+    color: white;
+}
+
+.question-meta {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.topic-tag {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+}
+
+.subtopic-tag {
+    background-color: rgba(
+        255,
+        255,
+        255,
+        0.3
+    ); /* Slightly more visible than topic */
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Add subtle border */
+}
+
 .game-layout {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -712,6 +744,26 @@ input:focus {
     transition: width 1s linear, background-color 1s ease-in-out;
 }
 
+/* Difficulty sliders */
+.difficulty-sliders {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.min-difficulty,
+.max-difficulty {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.min-difficulty small,
+.max-difficulty small {
+    color: #555;
+}
+
 /* Appeal system styles */
 .appeal-section {
     margin-top: 15px;
@@ -859,6 +911,12 @@ input:focus {
 
 .next-question-controls {
     margin-top: 20px;
+    text-align: center;
+}
+
+.next-question-text {
+    color: var(--primary);
+    font-weight: 500;
     text-align: center;
 }
 

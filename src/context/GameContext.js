@@ -46,6 +46,7 @@ const initialState = {
     playerId: null,
     error: null,
     typewriterInterrupted: false, // Add this new state
+    difficultyRange: { min: 1, max: 10 }, // Add difficulty range
 };
 
 // Game state reducer
@@ -84,6 +85,7 @@ function gameReducer(state, action) {
                 players: action.payload.room.players,
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
+                difficultyRange: action.payload.room.difficultyRange,
                 isHost: true,
             };
 
@@ -96,6 +98,7 @@ function gameReducer(state, action) {
                 players: action.payload.room.players,
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
+                difficultyRange: action.payload.room.difficultyRange,
                 isHost: false,
             };
 
@@ -129,7 +132,8 @@ function gameReducer(state, action) {
             socket.emit("startGame", {
                 gameQuestions: generateQuestions(
                     state.selectedTopics,
-                    GAME_CONSTANTS.QUESTIONS_PER_GAME
+                    GAME_CONSTANTS.QUESTIONS_PER_GAME,
+                    state.difficultyRange || { min: 1, max: 10 }
                 ),
             });
             return state;
@@ -455,12 +459,13 @@ export const GameProvider = ({ children }) => {
         socket.emit("toggleReady");
     };
 
-    // Update the startGame function to add better error handling
+    // Update the startGame function to add difficulty filter
     const startGame = () => {
         try {
             const questions = generateQuestions(
                 state.selectedTopics,
-                GAME_CONSTANTS.QUESTIONS_PER_GAME
+                GAME_CONSTANTS.QUESTIONS_PER_GAME,
+                state.difficultyRange || { min: 1, max: 10 }
             );
 
             if (!questions || questions.length === 0) {

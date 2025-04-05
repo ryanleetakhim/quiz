@@ -9,9 +9,9 @@ export const GAME_CONSTANTS = {
     QUESTIONS_PER_GAME: 30,
 
     // Timer settings
-    MIN_ANSWER_TIME: 30, // seconds
-    MAX_ANSWER_TIME: 120, // seconds
-    ANSWER_TIME_LIMIT: 30, // seconds
+    MIN_ANSWER_TIME: 15, // seconds
+    MAX_ANSWER_TIME: 60, // seconds
+    ANSWER_TIME_LIMIT: 15, // seconds
     TIMER_UPDATE_INTERVAL: 50, // ms
     TIMER_WIDTH_PERCENT_PER_SECOND: 5, // 5% per second
     TIMER_DANGER_THRESHOLD: 5, // seconds - when appeal timer turns red

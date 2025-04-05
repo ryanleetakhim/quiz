@@ -274,7 +274,22 @@ const GameScreen = () => {
                         問題 {state.currentQuestionIndex + 1}/
                         {state.gameQuestions.length}
                     </h2>
-                    <div className="topic-tag">{currentQuestion.topic}</div>
+                    <div className="question-meta">
+                        <div className="topic-tag">{currentQuestion.topic}</div>
+                        {currentQuestion.subtopic && (
+                            <div className="subtopic-tag">
+                                {currentQuestion.subtopic}
+                            </div>
+                        )}
+                        {currentQuestion.difficulty && (
+                            <div className="difficulty-tag">
+                                難度:{" "}
+                                {parseFloat(currentQuestion.difficulty).toFixed(
+                                    1
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
                 <div className="game-layout">
                     <div className="player-rankings">
@@ -459,6 +474,12 @@ const GameScreen = () => {
                                             >
                                                 下一題
                                             </button>
+                                        </div>
+                                    )}
+
+                                    {!showNextQuestionButton && (
+                                        <div className="next-question-text">
+                                            等待房主操作...
                                         </div>
                                     )}
 

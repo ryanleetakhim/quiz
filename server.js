@@ -31,10 +31,8 @@ io.on("connection", (socket) => {
 
     // Create room handler
     socket.on("createRoom", (data) => {
-        // Generate room ID
         const roomId = uuidv4(); // Changed from generateUniqueId() to uuidv4()
 
-        // Create room object with host data
         const room = {
             id: roomId,
             name: data.roomName,
@@ -44,6 +42,7 @@ io.on("connection", (socket) => {
             selectedTopics: data.selectedTopics,
             answerTimeLimit:
                 data.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT, // Add this line
+            difficultyRange: data.difficultyRange || { min: 1, max: 10 }, // Add difficulty range
             players: [
                 {
                     id: socket.id,
