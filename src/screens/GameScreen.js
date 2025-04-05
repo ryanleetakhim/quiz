@@ -103,9 +103,11 @@ const GameScreen = () => {
         state.answeringPlayerId === state.playerId &&
         !state.hasBeenAppealed;
 
-    // NEW: Add handler for finishing the game (for host)
+    // Updated: Fix handleFinishGame function to properly end the game
     const handleFinishGame = () => {
-        dispatch({ type: "END_GAME" });
+        // We should use NEXT_QUESTION instead of END_GAME
+        // The server already handles ending the game when we move past the last question
+        dispatch({ type: "NEXT_QUESTION" });
     };
 
     // Start timer function
