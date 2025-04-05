@@ -162,26 +162,56 @@ io.on("connection", (socket) => {
     });
 
     // Handle answering question
-    socket.on("answerQuestion", () => {
+    socket.on("answerQuestion", (data) => {
         const roomId = socket.roomId;
         if (!roomId || !rooms[roomId]) return;
 
         const room = rooms[roomId];
-        if (
-            room.gameState.status !== "playing" ||
-            room.gameState.answeringPlayerId
-        )
-            return;
+        // if (
+        //     room.gameState.status !== "playing" ||
+        //     room.gameState.answeringPlayerId
+        // )
+        //     return;
 
-        // Broadcast to all clients that typewriter should stop
-        io.to(roomId).emit("typewriterInterrupted");
+        // Store this attempt with its timestamp and the player's latency
+        if (!room.answerAttempts) room.answerAttempts = [];
 
-        room.gameState.answeringPlayerId = socket.id;
-
-        io.to(roomId).emit("questionAnswering", {
+        room.answerAttempts.push({
             playerId: socket.id,
-            gameState: room.gameState,
+            clientTimestamp: data.clientTimestamp,
+            serverTimestamp: Date.now(),
+            latency: socket.latency || 0, // Socket.IO measures latency automatically
         });
+
+        // Give a short window (e.g., 300ms) for other players with network disadvantages
+        if (!room.answerSelectionTimeout) {
+            room.answerSelectionTimeout = setTimeout(() => {
+                // Sort by adjusted timestamp (clientTimestamp - latency/2)
+                room.answerAttempts.sort(
+                    (a, b) =>
+                        a.clientTimestamp -
+                        a.latency / 2 -
+                        (b.clientTimestamp - b.latency / 2)
+                );
+
+                // Select the first player after adjustment
+                const winner = room.answerAttempts[0];
+                room.gameState.answeringPlayerId = winner.playerId;
+
+                // Clear the attempts and timeout
+                room.answerAttempts = [];
+                room.answerSelectionTimeout = null;
+
+                // Broadcast to all clients that typewriter should stop
+                io.to(roomId).emit("typewriterInterrupted");
+
+                // Notify clients
+                io.to(roomId).emit("questionAnswering", {
+                    playerId: winner.playerId,
+                    gameState: room.gameState,
+                });
+            }, 300);
+        }
     });
 
     // Handle answer submission

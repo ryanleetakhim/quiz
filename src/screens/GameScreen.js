@@ -129,7 +129,11 @@ const GameScreen = () => {
     // Handle user wanting to answer the question
     const handleAnswerQuestion = () => {
         if (!state.answeringPlayerId && !state.showAnswer) {
-            dispatch({ type: "ANSWER_QUESTION" });
+            const clientTimestamp = Date.now();
+            dispatch({
+                type: "ANSWER_QUESTION",
+                payload: clientTimestamp,
+            });
             // Use the room-specific timer setting instead of constant
             startTimer(
                 state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,

@@ -163,7 +163,7 @@ function gameReducer(state, action) {
             };
 
         case "ANSWER_QUESTION":
-            socket.emit("answerQuestion");
+            socket.emit("answerQuestion", { clientTimestamp: action.payload });
             return state;
 
         case "TYPEWRITER_INTERRUPTED":

@@ -23,7 +23,7 @@ export const GAME_CONSTANTS = {
     PODIUM_OFFSET: 4, // Ranking offset after podium
 
     // Timings (milliseconds)
-    TYPEWRITER_SPEED: 50,
+    TYPEWRITER_SPEED: 100,
     NEXT_QUESTION_DELAY: 5000,
     APPEAL_RESOLUTION_DELAY: 1000,
     APPEAL_VOTING_TIME: 20000, // 20 seconds for voting
