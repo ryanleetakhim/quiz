@@ -72,6 +72,29 @@ const GameScreen = () => {
         isAnsweringRef.current = state.answeringPlayerId === state.playerId;
     }, [state.answeringPlayerId, state.playerId]);
 
+    // Add this effect hook to start the timer for all players when someone starts answering
+    useEffect(() => {
+        if (state.answeringPlayerId && !state.showAnswer) {
+            // Start timer for all players
+            startTimer(
+                state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,
+                () => {
+                    // Time's up logic - only the answering player should submit
+                    if (isAnsweringRef.current) {
+                        dispatch({
+                            type: "SUBMIT_ANSWER",
+                            payload: "(未回答)",
+                        });
+                    }
+                }
+            );
+        } else {
+            // Clear timer when no one is answering or answer is shown
+            clearInterval(timerRef.current);
+            setTimeLeft(null);
+        }
+    }, [state.answeringPlayerId, state.showAnswer, state.answerTimeLimit]);
+
     // Add a function to get better color transitions for the timer
     const getTimerColor = (time) => {
         const totalTime =
@@ -134,19 +157,8 @@ const GameScreen = () => {
                 type: "ANSWER_QUESTION",
                 payload: clientTimestamp,
             });
-            // Use the room-specific timer setting instead of constant
-            startTimer(
-                state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,
-                () => {
-                    // Time's up - submit empty answer using the current ref value
-                    if (isAnsweringRef.current) {
-                        dispatch({
-                            type: "SUBMIT_ANSWER",
-                            payload: "(未回答)",
-                        });
-                    }
-                }
-            );
+            // Note: We don't need to start the timer here anymore
+            // as it will be handled by the useEffect hook above
         }
     };
 
@@ -357,30 +369,31 @@ const GameScreen = () => {
                                         正在回答...
                                     </div>
 
-                                    {timeLeft !== null && (
-                                        <div className="timer-container">
-                                            {/* Remove the timer-label div that displays seconds */}
-                                            <div className="time-bar">
-                                                <div
-                                                    className="time-progress"
-                                                    style={{
-                                                        width: `${
-                                                            (timeLeft /
-                                                                (state.answerTimeLimit ||
-                                                                    GAME_CONSTANTS.ANSWER_TIME_LIMIT)) *
-                                                            100
-                                                        }%`,
-                                                        backgroundColor:
-                                                            getTimerColor(
-                                                                timeLeft
-                                                            ),
-                                                        transition:
-                                                            "width 1s linear, background-color 1s ease-in-out",
-                                                    }}
-                                                ></div>
+                                    {/* Modified timer display to show for all players when someone is answering */}
+                                    {state.answeringPlayerId &&
+                                        !state.showAnswer && (
+                                            <div className="timer-container">
+                                                <div className="time-bar">
+                                                    <div
+                                                        className="time-progress"
+                                                        style={{
+                                                            width: `${
+                                                                (timeLeft /
+                                                                    (state.answerTimeLimit ||
+                                                                        GAME_CONSTANTS.ANSWER_TIME_LIMIT)) *
+                                                                100
+                                                            }%`,
+                                                            backgroundColor:
+                                                                getTimerColor(
+                                                                    timeLeft
+                                                                ),
+                                                            transition:
+                                                                "width 1s linear, background-color 1s ease-in-out",
+                                                        }}
+                                                    ></div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
                                     {isAnswering && (
                                         <form
