@@ -3,10 +3,13 @@ export const GAME_CONSTANTS = {
     // Player limits
     MIN_PLAYERS: 2,
     MAX_PLAYERS: 8,
-    DEFAULT_MAX_PLAYERS: 4,
+    DEFAULT_MAX_PLAYERS: 8,
 
     // Questions
+    MIN_QUESTIONS_PER_GAME: 5,
+    MAX_QUESTIONS_PER_GAME: 50,
     QUESTIONS_PER_GAME: 30,
+    DEFAULT_QUESTIONS_PER_GAME: 30,
 
     // Timer settings
     MIN_ANSWER_TIME: 15, // seconds

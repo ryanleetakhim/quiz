@@ -32,6 +32,11 @@ const HostGameScreen = () => {
     const [minDifficulty, setMinDifficulty] = useState(1);
     const [maxDifficulty, setMaxDifficulty] = useState(10);
 
+    // Add new state for question count
+    const [questionCount, setQuestionCount] = useState(
+        GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME
+    );
+
     // Use the hook to get topics
     const { topics, loading } = useQuestionData();
 
@@ -90,6 +95,7 @@ const HostGameScreen = () => {
                 min: minDifficulty,
                 max: maxDifficulty,
             },
+            questionCount, // Add questionCount to room creation
         });
     };
 
@@ -229,6 +235,20 @@ const HostGameScreen = () => {
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    {/* Add new slider for question count after difficulty sliders */}
+                    <div className="form-group">
+                        <label>題目數量: {questionCount}</label>
+                        <input
+                            type="range"
+                            min={GAME_CONSTANTS.MIN_QUESTIONS_PER_GAME}
+                            max={GAME_CONSTANTS.MAX_QUESTIONS_PER_GAME}
+                            value={questionCount}
+                            onChange={(e) =>
+                                setQuestionCount(parseInt(e.target.value))
+                            }
+                        />
                     </div>
 
                     <div className="form-group">

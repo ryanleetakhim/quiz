@@ -45,8 +45,9 @@ const initialState = {
     isHost: false,
     playerId: null,
     error: null,
-    typewriterInterrupted: false, // Add this new state
-    difficultyRange: { min: 1, max: 10 }, // Add difficulty range
+    typewriterInterrupted: false,
+    difficultyRange: { min: 1, max: 10 },
+    questionCount: GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME,
 };
 
 // Game state reducer
@@ -86,6 +87,7 @@ function gameReducer(state, action) {
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
                 difficultyRange: action.payload.room.difficultyRange,
+                questionCount: action.payload.room.questionCount, // Add this line
                 maxPlayers: action.payload.room.maxPlayers,
                 isHost: true,
             };
@@ -100,6 +102,7 @@ function gameReducer(state, action) {
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
                 difficultyRange: action.payload.room.difficultyRange,
+                questionCount: action.payload.room.questionCount, // Add this line
                 maxPlayers: action.payload.room.maxPlayers,
                 isHost: false,
             };
@@ -134,7 +137,8 @@ function gameReducer(state, action) {
             socket.emit("startGame", {
                 gameQuestions: generateQuestions(
                     state.selectedTopics,
-                    GAME_CONSTANTS.QUESTIONS_PER_GAME,
+                    state.questionCount ||
+                        GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME, // Use custom question count
                     state.difficultyRange || { min: 1, max: 10 }
                 ),
             });
@@ -461,19 +465,20 @@ export const GameProvider = ({ children }) => {
         socket.emit("toggleReady");
     };
 
-    // Update the startGame function to add difficulty filter
+    // Update the startGame function to use the custom question count
     const startGame = () => {
         try {
             const questions = generateQuestions(
                 state.selectedTopics,
-                GAME_CONSTANTS.QUESTIONS_PER_GAME,
+                state.questionCount ||
+                    GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME, // Use custom question count
                 state.difficultyRange || { min: 1, max: 10 }
             );
 
             if (!questions || questions.length === 0) {
                 dispatch({
                     type: "SET_ERROR",
-                    payload: "無法生成問題。請確保至少選擇了一個主題。",
+                    payload: "無法生成題目。請選擇不同的主題或檢查連接。",
                 });
                 return;
             }
@@ -484,7 +489,7 @@ export const GameProvider = ({ children }) => {
             console.error("Error starting game:", error);
             dispatch({
                 type: "SET_ERROR",
-                payload: "啟動遊戲時發生錯誤，請重試。",
+                payload: "啟動遊戲時出錯。請重試。",
             });
         }
     };

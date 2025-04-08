@@ -161,8 +161,18 @@ export const generateQuestions = (
 
     console.log(`Generated ${allQuestions.length} questions before shuffling`);
 
-    // Shuffle questions
-    const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
+    // Fisher-Yates (Knuth) shuffle algorithm for true randomness
+    const shuffle = (array) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
+    // Apply proper shuffling algorithm
+    const shuffled = shuffle(allQuestions);
 
     // Return requested number of questions (or all if fewer available)
     const result = shuffled.slice(0, count);

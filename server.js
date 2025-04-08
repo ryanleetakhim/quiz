@@ -41,8 +41,10 @@ io.on("connection", (socket) => {
             maxPlayers: data.maxPlayers,
             selectedTopics: data.selectedTopics,
             answerTimeLimit:
-                data.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT, // Add this line
-            difficultyRange: data.difficultyRange || { min: 1, max: 10 }, // Add difficulty range
+                data.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,
+            difficultyRange: data.difficultyRange || { min: 1, max: 10 },
+            questionCount:
+                data.questionCount || GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME, // Add question count
             players: [
                 {
                     id: socket.id,
