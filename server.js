@@ -394,6 +394,26 @@ io.on("connection", (socket) => {
         }
     });
 
+    // Handle skip question (new)
+    socket.on("skipQuestion", () => {
+        const roomId = socket.roomId;
+        if (!roomId || !rooms[roomId]) return;
+
+        const room = rooms[roomId];
+        const player = room.players.find((p) => p.id === socket.id);
+
+        // Only the host can skip questions
+        if (player && player.isHost && !room.gameState.showAnswer) {
+            // First notify clients that the question is being skipped
+            io.to(roomId).emit("questionSkipped", {
+                questionIndex: room.gameState.currentQuestionIndex,
+            });
+
+            // Then move to the next question
+            moveToNextQuestion(roomId);
+        }
+    });
+
     // Handle player leaving
     socket.on("leaveRoom", () => {
         handlePlayerDisconnect(socket);

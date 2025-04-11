@@ -1077,3 +1077,35 @@ input:focus {
         gap: 15px;
     }
 }
+
+/* Question Actions */
+.question-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.answer-button {
+    background-color: var(--secondary);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    border: none;
+    cursor: pointer;
+}
+
+.skip-button {
+    background-color: #ff9800; /* Orange color for skip */
+    color: white;
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    border: none;
+    cursor: pointer;
+}
+
+.skip-button:hover {
+    background-color: #e68a00;
+}

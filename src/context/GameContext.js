@@ -295,6 +295,10 @@ function gameReducer(state, action) {
             socket.emit("toggleReady");
             return state;
 
+        case "SKIP_QUESTION":
+            socket.emit("skipQuestion");
+            return state;
+
         default:
             return state;
     }
@@ -421,6 +425,11 @@ export const GameProvider = ({ children }) => {
             dispatch({ type: "TYPEWRITER_INTERRUPTED" });
         });
 
+        // Add event listener for question skipped
+        socket.on("questionSkipped", (data) => {
+            console.log(`Question ${data.questionIndex + 1} skipped by host`);
+        });
+
         // Get available rooms on connection
         socket.emit("getRoomList");
 
@@ -445,6 +454,7 @@ export const GameProvider = ({ children }) => {
             socket.off("nextQuestion", handleNextQuestion);
             socket.off("gameEnded", handleGameEnded);
             socket.off("typewriterInterrupted");
+            socket.off("questionSkipped");
         };
     }, []);
 

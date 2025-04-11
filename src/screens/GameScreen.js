@@ -162,6 +162,13 @@ const GameScreen = () => {
         }
     };
 
+    // New function to handle skipping a question
+    const handleSkipQuestion = () => {
+        if (!state.answeringPlayerId && !state.showAnswer) {
+            dispatch({ type: "SKIP_QUESTION" });
+        }
+    };
+
     // Handle submit answer
     const handleSubmitAnswer = (e) => {
         e.preventDefault();
@@ -347,14 +354,31 @@ const GameScreen = () => {
                                         text={currentQuestion.question}
                                         onInterrupt={handleAnswerQuestion}
                                     />
-                                    {!state.answeringPlayerId && (
-                                        <button
-                                            className="answer-button"
-                                            onClick={handleAnswerQuestion}
-                                        >
-                                            回答
-                                        </button>
-                                    )}
+                                    {!state.answeringPlayerId &&
+                                        !state.showAnswer && (
+                                            <div className="question-actions">
+                                                <button
+                                                    className="answer-button"
+                                                    onClick={
+                                                        handleAnswerQuestion
+                                                    }
+                                                >
+                                                    回答
+                                                </button>
+
+                                                {/* Skip button - only visible to the host */}
+                                                {state.isHost && (
+                                                    <button
+                                                        className="skip-button"
+                                                        onClick={
+                                                            handleSkipQuestion
+                                                        }
+                                                    >
+                                                        跳過問題
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                 </>
                             )}
 
