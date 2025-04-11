@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useGame } from "../context/GameContext";
 import { GAME_CONSTANTS } from "../utils/constants";
 
-const TypewriterEffect = ({ text, onInterrupt }) => {
+const TypewriterEffect = ({ text }) => {
     const [displayedText, setDisplayedText] = useState("");
     const [isComplete, setIsComplete] = useState(false);
     const intervalRef = useRef(null);
@@ -41,20 +41,7 @@ const TypewriterEffect = ({ text, onInterrupt }) => {
         }
     }, [state.typewriterInterrupted, isComplete, text]);
 
-    const handleClick = () => {
-        if (!isComplete) {
-            clearInterval(intervalRef.current);
-            // Don't set the full text, just keep what's already shown
-            setIsComplete(true);
-            if (onInterrupt) onInterrupt();
-        }
-    };
-
-    return (
-        <div className="typewriter" onClick={handleClick}>
-            {displayedText}
-        </div>
-    );
+    return <div className="typewriter">{displayedText}</div>;
 };
 
 const GameScreen = () => {
@@ -128,8 +115,6 @@ const GameScreen = () => {
 
     // Updated: Fix handleFinishGame function to properly end the game
     const handleFinishGame = () => {
-        // We should use NEXT_QUESTION instead of END_GAME
-        // The server already handles ending the game when we move past the last question
         dispatch({ type: "NEXT_QUESTION" });
     };
 
@@ -157,8 +142,6 @@ const GameScreen = () => {
                 type: "ANSWER_QUESTION",
                 payload: clientTimestamp,
             });
-            // Note: We don't need to start the timer here anymore
-            // as it will be handled by the useEffect hook above
         }
     };
 
@@ -352,7 +335,6 @@ const GameScreen = () => {
                                 <>
                                     <TypewriterEffect
                                         text={currentQuestion.question}
-                                        onInterrupt={handleAnswerQuestion}
                                     />
                                     {!state.answeringPlayerId &&
                                         !state.showAnswer && (
