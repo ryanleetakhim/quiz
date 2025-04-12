@@ -9,9 +9,7 @@ const EndingScreen = () => {
     const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
 
     const handleReturnToRoom = () => {
-        // Return to room functionality is handled by the server
-        // Since we're using sockets, we just navigate back to the room screen
-        window.location.reload(); // Simplest way to reset the game state
+        window.location.reload();
     };
 
     const handleReturnToHome = () => {
@@ -81,14 +79,12 @@ const EndingScreen = () => {
                 </div>
 
                 <div className="ending-actions">
-                    {state.isHost && (
-                        <button
-                            className="btn-primary"
-                            onClick={handleReturnToRoom}
-                        >
-                            重新開始
-                        </button>
-                    )}
+                    <button
+                        className="btn-primary"
+                        onClick={handleReturnToRoom}
+                    >
+                        返回房間
+                    </button>
                     <button
                         className="btn-secondary"
                         onClick={handleReturnToHome}

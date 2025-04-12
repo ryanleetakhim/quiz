@@ -2,7 +2,7 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const path = require("path");
-const { v4: uuidv4 } = require("uuid");
+const { nanoid } = require("nanoid");
 const { checkAnswer } = require("./src/services/geminiService");
 require("dotenv").config();
 
@@ -31,7 +31,8 @@ io.on("connection", (socket) => {
 
     // Create room handler
     socket.on("createRoom", (data) => {
-        const roomId = uuidv4(); // Changed from generateUniqueId() to uuidv4()
+        // Generate a 4-character room ID using nanoid
+        const roomId = nanoid(4);
 
         const room = {
             id: roomId,
