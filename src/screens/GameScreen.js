@@ -113,11 +113,6 @@ const GameScreen = () => {
         state.answeringPlayerId === state.playerId &&
         !state.hasBeenAppealed;
 
-    // Updated: Fix handleFinishGame function to properly end the game
-    const handleFinishGame = () => {
-        dispatch({ type: "NEXT_QUESTION" });
-    };
-
     // Start timer function
     const startTimer = (duration, onComplete) => {
         clearInterval(timerRef.current);
@@ -258,18 +253,10 @@ const GameScreen = () => {
         );
     }
 
-    // Determine if we should show the next question button
     const showNextQuestionButton =
-        state.isHost &&
-        state.showAnswer &&
-        !state.appealInProgress &&
-        state.currentQuestionIndex < state.gameQuestions.length - 1;
+        state.isHost && state.showAnswer && !state.appealInProgress;
 
-    // NEW: Determine if we should show the finish game button (on last question)
-    const showFinishGameButton =
-        state.isHost &&
-        state.showAnswer &&
-        !state.appealInProgress &&
+    const isLastQuestion =
         state.currentQuestionIndex === state.gameQuestions.length - 1;
 
     return (
@@ -495,7 +482,9 @@ const GameScreen = () => {
                                                 className="btn-primary"
                                                 onClick={handleNextQuestion}
                                             >
-                                                下一題
+                                                {isLastQuestion
+                                                    ? "結束遊戲"
+                                                    : "下一題"}
                                             </button>
                                         </div>
                                     )}
@@ -503,18 +492,6 @@ const GameScreen = () => {
                                     {!showNextQuestionButton && (
                                         <div className="next-question-text">
                                             等待房主操作...
-                                        </div>
-                                    )}
-
-                                    {/* NEW: Add finish game button for the last question */}
-                                    {showFinishGameButton && (
-                                        <div className="next-question-controls">
-                                            <button
-                                                className="btn-primary"
-                                                onClick={handleFinishGame}
-                                            >
-                                                完成遊戲
-                                            </button>
                                         </div>
                                     )}
                                 </div>
