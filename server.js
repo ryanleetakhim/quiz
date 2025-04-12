@@ -433,6 +433,39 @@ io.on("connection", (socket) => {
         }
     });
 
+    // Handle return to room
+    socket.on("returnToRoom", () => {
+        const roomId = socket.roomId;
+        console.log("Returning to room:", roomId);
+
+        if (!roomId || !rooms[roomId]) return;
+
+        const room = rooms[roomId];
+
+        // Reset game state to waiting
+        room.gameState = {
+            ...room.gameState,
+            status: "waiting",
+        };
+
+        // Reset ready status for non-host players
+        room.players.forEach((player) => {
+            if (!player.isHost) {
+                player.isReady = false;
+            }
+        });
+
+        // Notify all clients in the room
+        io.to(roomId).emit("returnedToRoom", {
+            players: room.players,
+        });
+
+        // Update public room list if room is public
+        if (!room.isPrivate) {
+            io.emit("roomList", getPublicRooms());
+        }
+    });
+
     // Handle player leaving
     socket.on("leaveRoom", () => {
         handlePlayerDisconnect(socket);

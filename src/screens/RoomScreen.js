@@ -46,10 +46,7 @@ const RoomScreen = () => {
     // Check if all non-host players are ready
     const allPlayersReady = () => {
         const nonHostPlayers = state.players.filter((player) => !player.isHost);
-        return (
-            nonHostPlayers.length > 0 &&
-            nonHostPlayers.every((player) => player.isReady)
-        );
+        return nonHostPlayers.every((player) => player.isReady);
     };
 
     const handleToggleReady = () => {

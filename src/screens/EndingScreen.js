@@ -3,13 +3,13 @@ import { useGame } from "../context/GameContext";
 import { GAME_CONSTANTS } from "../utils/constants";
 
 const EndingScreen = () => {
-    const { state, leaveRoom } = useGame();
+    const { state, leaveRoom, returnToRoom } = useGame();
 
     // Sort players by score
     const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
 
     const handleReturnToRoom = () => {
-        window.location.reload();
+        returnToRoom();
     };
 
     const handleReturnToHome = () => {

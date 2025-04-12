@@ -518,6 +518,12 @@ export const GameProvider = ({ children }) => {
         dispatch({ type: "CLEAR_ERROR" });
     }, []);
 
+    // Add returnToRoom function in the GameProvider component
+    const returnToRoom = () => {
+        socket.emit("returnToRoom");
+        dispatch({ type: "RETURN_TO_ROOM" });
+    };
+
     return (
         <GameContext.Provider
             value={{
@@ -530,6 +536,7 @@ export const GameProvider = ({ children }) => {
                 leaveRoom,
                 clearError,
                 fetchAvailableRooms,
+                returnToRoom,
             }}
         >
             {children}
