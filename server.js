@@ -404,13 +404,31 @@ io.on("connection", (socket) => {
 
         // Only the host can skip questions
         if (player && player.isHost && !room.gameState.showAnswer) {
-            // First notify clients that the question is being skipped
+            const currentQuestion =
+                room.gameState.gameQuestions[
+                    room.gameState.currentQuestionIndex
+                ];
+
+            // Update game state to show the answer without affecting scores
+            room.gameState = {
+                ...room.gameState,
+                submittedAnswer: "(已跳過)", // "(Skipped)" in Chinese
+                correctAnswer: currentQuestion.answer,
+                answerResult: false, // Not correct since it was skipped
+                showAnswer: true,
+                answerExplanation: "此問題已被房主跳過。", // This question was skipped by the host.
+            };
+
+            // Notify clients the question was skipped
             io.to(roomId).emit("questionSkipped", {
                 questionIndex: room.gameState.currentQuestionIndex,
             });
 
-            // Then move to the next question
-            moveToNextQuestion(roomId);
+            // Also emit answerSubmitted to show the answer
+            io.to(roomId).emit("answerSubmitted", {
+                gameState: room.gameState,
+                players: room.players,
+            });
         }
     });
 
