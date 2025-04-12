@@ -63,18 +63,15 @@ const GameScreen = () => {
     useEffect(() => {
         if (state.answeringPlayerId && !state.showAnswer) {
             // Start timer for all players
-            startTimer(
-                state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,
-                () => {
-                    // Time's up logic - only the answering player should submit
-                    if (isAnsweringRef.current) {
-                        dispatch({
-                            type: "SUBMIT_ANSWER",
-                            payload: "(未回答)",
-                        });
-                    }
+            startTimer(state.answerTimeLimit, () => {
+                // Time's up logic - only the answering player should submit
+                if (isAnsweringRef.current) {
+                    dispatch({
+                        type: "SUBMIT_ANSWER",
+                        payload: "",
+                    });
                 }
-            );
+            });
         } else {
             // Clear timer when no one is answering or answer is shown
             clearInterval(timerRef.current);
@@ -84,8 +81,7 @@ const GameScreen = () => {
 
     // Add a function to get better color transitions for the timer
     const getTimerColor = (time) => {
-        const totalTime =
-            state.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT;
+        const totalTime = state.answerTimeLimit;
         const percentRemaining = time / totalTime;
 
         if (percentRemaining <= 0.25) {
@@ -313,7 +309,6 @@ const GameScreen = () => {
                     </div>
                     <div className="question-section">
                         <div className="question-container">
-                            {/* Question display */}
                             {state.showAnswer ? (
                                 <div className="question-text">
                                     {currentQuestion.question}
@@ -335,7 +330,6 @@ const GameScreen = () => {
                                                     回答
                                                 </button>
 
-                                                {/* Skip button - only visible to the host */}
                                                 {state.isHost && (
                                                     <button
                                                         className="skip-button"
@@ -351,7 +345,6 @@ const GameScreen = () => {
                                 </>
                             )}
 
-                            {/* Answering interface */}
                             {state.answeringPlayerId && !state.showAnswer && (
                                 <div className="answering-info">
                                     <div className="answering-player">
@@ -362,7 +355,6 @@ const GameScreen = () => {
                                         正在回答...
                                     </div>
 
-                                    {/* Modified timer display to show for all players when someone is answering */}
                                     {state.answeringPlayerId &&
                                         !state.showAnswer && (
                                             <div className="timer-container">
@@ -372,8 +364,7 @@ const GameScreen = () => {
                                                         style={{
                                                             width: `${
                                                                 (timeLeft /
-                                                                    (state.answerTimeLimit ||
-                                                                        GAME_CONSTANTS.ANSWER_TIME_LIMIT)) *
+                                                                    state.answerTimeLimit) *
                                                                 100
                                                             }%`,
                                                             backgroundColor:
@@ -417,7 +408,6 @@ const GameScreen = () => {
                                 </div>
                             )}
 
-                            {/* Answer result */}
                             {state.showAnswer && !state.appealInProgress && (
                                 <div
                                     className={`answer-result ${
@@ -448,7 +438,6 @@ const GameScreen = () => {
                                             : "回答錯誤"}
                                     </div>
 
-                                    {/* Appeal button */}
                                     {canAppeal && (
                                         <div className="appeal-section">
                                             <button
@@ -463,7 +452,6 @@ const GameScreen = () => {
                                         </div>
                                     )}
 
-                                    {/* Add explanation if available */}
                                     {state.answerExplanation && (
                                         <div className="answer-explanation">
                                             <div className="explanation-label">
@@ -475,7 +463,6 @@ const GameScreen = () => {
                                         </div>
                                     )}
 
-                                    {/* NEW: Add next question button for host */}
                                     {showNextQuestionButton && (
                                         <div className="next-question-controls">
                                             <button
@@ -497,7 +484,6 @@ const GameScreen = () => {
                                 </div>
                             )}
 
-                            {/* Appeal voting UI */}
                             {state.appealInProgress && (
                                 <div className="appeal-voting">
                                     <div className="appeal-info">
@@ -522,7 +508,6 @@ const GameScreen = () => {
                                             </div>
                                         </div>
 
-                                        {/* Voting options for players who didn't appeal */}
                                         {state.appealPlayerId !==
                                             state.playerId &&
                                             !hasVotedOnAppeal() && (
@@ -555,7 +540,6 @@ const GameScreen = () => {
                                                 </>
                                             )}
 
-                                        {/* Show user's vote */}
                                         {hasVotedOnAppeal() && (
                                             <div className="vote-status">
                                                 你已投票:{" "}
@@ -567,7 +551,6 @@ const GameScreen = () => {
                                             </div>
                                         )}
 
-                                        {/* Message for appealing player */}
                                         {state.appealPlayerId ===
                                             state.playerId && (
                                             <div className="vote-status">
@@ -590,7 +573,6 @@ const GameScreen = () => {
                                 </div>
                             )}
 
-                            {/* Appeal results */}
                             {!state.appealInProgress &&
                                 state.appealPassed !== null &&
                                 state.showAnswer && (

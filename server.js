@@ -41,11 +41,9 @@ io.on("connection", (socket) => {
             password: data.isPrivate ? data.password : null,
             maxPlayers: data.maxPlayers,
             selectedTopics: data.selectedTopics,
-            answerTimeLimit:
-                data.answerTimeLimit || GAME_CONSTANTS.ANSWER_TIME_LIMIT,
-            difficultyRange: data.difficultyRange || { min: 1, max: 10 },
-            questionCount:
-                data.questionCount || GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME, // Add question count
+            answerTimeLimit: data.answerTimeLimit,
+            difficultyRange: data.difficultyRange,
+            questionCount: data.questionCount,
             players: [
                 {
                     id: socket.id,
@@ -55,7 +53,7 @@ io.on("connection", (socket) => {
                     score: 0,
                 },
             ],
-            gameState: { status: "waiting" }, // Initialize gameState object
+            gameState: { status: "waiting" },
         };
 
         // Store room in memory
@@ -170,11 +168,6 @@ io.on("connection", (socket) => {
         if (!roomId || !rooms[roomId]) return;
 
         const room = rooms[roomId];
-        // if (
-        //     room.gameState.status !== "playing" ||
-        //     room.gameState.answeringPlayerId
-        // )
-        //     return;
 
         // Store this attempt with its timestamp and the player's latency
         if (!room.answerAttempts) room.answerAttempts = [];
@@ -183,13 +176,13 @@ io.on("connection", (socket) => {
             playerId: socket.id,
             clientTimestamp: data.clientTimestamp,
             serverTimestamp: Date.now(),
-            latency: socket.latency || 0, // Socket.IO measures latency automatically
+            latency: socket.latency || 0,
         });
 
         // Give a short window (e.g., 300ms) for other players with network disadvantages
         if (!room.answerSelectionTimeout) {
             room.answerSelectionTimeout = setTimeout(() => {
-                // Sort by adjusted timestamp (clientTimestamp - latency/2)
+                // Sort by adjusted timestamp
                 room.answerAttempts.sort(
                     (a, b) =>
                         a.clientTimestamp -
@@ -231,100 +224,35 @@ io.on("connection", (socket) => {
 
         const currentQuestion =
             room.gameState.gameQuestions[room.gameState.currentQuestionIndex];
+        const isAnswered = data.answer !== "";
+        let answerCheck = {
+            isCorrect: false,
+            confidence: 1.0,
+            explanation: "使用者沒有提供任何答案，因此答案不正確。",
+        };
 
-        try {
+        if (isAnswered) {
             // Use Gemini API to check the answer
-            const answerCheck = await checkAnswer(
+            answerCheck = await checkAnswer(
                 data.answer,
                 currentQuestion.answer,
                 currentQuestion.question
             );
-
-            const isCorrect =
-                answerCheck.isCorrect && answerCheck.confidence > 0.7;
-
-            // Update player score
-            const player = room.players.find((p) => p.id === socket.id);
-            if (player) {
-                if (isCorrect) {
-                    player.score += 1;
-                } else {
-                    player.score -= 1;
-                }
-            }
-
-            room.gameState = {
-                ...room.gameState,
-                submittedAnswer: data.answer,
-                correctAnswer: currentQuestion.answer,
-                answerResult: isCorrect,
-                showAnswer: true,
-                answerExplanation: answerCheck.explanation, // Store the explanation
-            };
-
-            io.to(roomId).emit("answerSubmitted", {
-                gameState: room.gameState,
-                players: room.players,
-            });
-        } catch (error) {
-            console.error("Error processing answer:", error);
-
-            // Fallback to exact matching if API fails
-            const isCorrect =
-                data.answer.toLowerCase().trim() ===
-                currentQuestion.answer.toLowerCase().trim();
-
-            // Update player score
-            const player = room.players.find((p) => p.id === socket.id);
-            if (player) {
-                if (isCorrect) {
-                    player.score += 1;
-                } else {
-                    player.score -= 1;
-                }
-            }
-
-            room.gameState = {
-                ...room.gameState,
-                submittedAnswer: data.answer,
-                correctAnswer: currentQuestion.answer,
-                answerResult: isCorrect,
-                showAnswer: true,
-                answerExplanation:
-                    "Answer checked by exact matching (API unavailable)",
-            };
-
-            io.to(roomId).emit("answerSubmitted", {
-                gameState: room.gameState,
-                players: room.players,
-            });
         }
-    });
 
-    // Handle answer timeout
-    socket.on("timeoutAnswer", () => {
-        const roomId = socket.roomId;
-        if (!roomId || !rooms[roomId]) return;
-
-        const room = rooms[roomId];
-        if (
-            room.gameState.status !== "playing" ||
-            room.gameState.answeringPlayerId !== socket.id
-        )
-            return;
-
-        const currentQuestion =
-            room.gameState.gameQuestions[room.gameState.currentQuestionIndex];
-
-        // Timeout is always incorrect
-        const isCorrect = false;
+        // Update player score
+        const player = room.players.find((p) => p.id === socket.id);
+        if (player) {
+            player.score += answerCheck.isCorrect ? 1 : -1;
+        }
 
         room.gameState = {
             ...room.gameState,
-            submittedAnswer: "(時間到)",
+            submittedAnswer: isAnswered ? data.answer : "(未回答)",
             correctAnswer: currentQuestion.answer,
-            answerResult: isCorrect,
+            answerResult: answerCheck.isCorrect,
             showAnswer: true,
+            answerExplanation: answerCheck.explanation,
         };
 
         io.to(roomId).emit("answerSubmitted", {
@@ -376,8 +304,15 @@ io.on("connection", (socket) => {
             (p) => p.id !== room.gameState.appealPlayerId
         );
         const votesCount = Object.keys(room.gameState.appealVotes).length;
+        const acceptVotes = Object.values(room.gameState.appealVotes).filter(
+            (v) => v === "accept"
+        ).length;
+        const declineVotes = votesCount - acceptVotes;
 
-        if (votesCount >= eligibleVoters.length) {
+        if (
+            votesCount >= eligibleVoters.length ||
+            declineVotes >= eligibleVoters.length / 2
+        ) {
             resolveAppeal(roomId);
         }
     });
@@ -395,7 +330,7 @@ io.on("connection", (socket) => {
         }
     });
 
-    // Handle skip question (new)
+    // Handle skip question
     socket.on("skipQuestion", () => {
         const roomId = socket.roomId;
         if (!roomId || !rooms[roomId]) return;
@@ -413,19 +348,13 @@ io.on("connection", (socket) => {
             // Update game state to show the answer without affecting scores
             room.gameState = {
                 ...room.gameState,
-                submittedAnswer: "(已跳過)", // "(Skipped)" in Chinese
+                submittedAnswer: "(已跳過)",
                 correctAnswer: currentQuestion.answer,
-                answerResult: false, // Not correct since it was skipped
+                answerResult: false,
                 showAnswer: true,
-                answerExplanation: "此問題已被房主跳過。", // This question was skipped by the host.
+                answerExplanation: "此問題已被房主跳過。",
             };
 
-            // Notify clients the question was skipped
-            io.to(roomId).emit("questionSkipped", {
-                questionIndex: room.gameState.currentQuestionIndex,
-            });
-
-            // Also emit answerSubmitted to show the answer
             io.to(roomId).emit("answerSubmitted", {
                 gameState: room.gameState,
                 players: room.players,
@@ -488,7 +417,7 @@ function getPublicRooms() {
             id: room.id,
             name: room.name,
             hostName:
-                room.players.find((p) => p.isHost)?.name || "Unknown Host", // Fix: get host name from players array
+                room.players.find((p) => p.isHost)?.name || "Unknown Host",
             playerCount: room.players.length,
             maxPlayers: room.maxPlayers,
         }));
@@ -509,17 +438,16 @@ function resolveAppeal(roomId) {
         const appealingPlayer = room.players.find(
             (p) => p.id === room.gameState.appealPlayerId
         );
-        if (appealingPlayer) {
-            // Add 2 points: 1 to reverse the deduction and 1 for getting it right
-            appealingPlayer.score += 2;
-        }
+
+        // Add 2 points: 1 to reverse the deduction and 1 for getting it right
+        appealingPlayer.score += 2;
     }
 
     room.gameState = {
         ...room.gameState,
         appealInProgress: false,
         appealPassed: appealPassed,
-        answerResult: appealPassed ? true : room.gameState.answerResult,
+        answerResult: appealPassed,
     };
 
     io.to(roomId).emit("appealResolved", {

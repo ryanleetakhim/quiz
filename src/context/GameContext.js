@@ -10,11 +10,8 @@ import { GAME_CONSTANTS } from "../utils/constants";
 import io from "socket.io-client";
 
 const GameContext = createContext();
-
-// Socket.io connection
 const socket = io(window.location.origin);
 
-// Initial game state
 const initialState = {
     currentScreen: "welcome",
     roomName: "",
@@ -50,7 +47,6 @@ const initialState = {
     questionCount: GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME,
 };
 
-// Game state reducer
 function gameReducer(state, action) {
     switch (action.type) {
         case "NAVIGATE":
@@ -87,7 +83,7 @@ function gameReducer(state, action) {
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
                 difficultyRange: action.payload.room.difficultyRange,
-                questionCount: action.payload.room.questionCount, // Add this line
+                questionCount: action.payload.room.questionCount,
                 maxPlayers: action.payload.room.maxPlayers,
                 isHost: true,
             };
@@ -102,7 +98,7 @@ function gameReducer(state, action) {
                 selectedTopics: action.payload.room.selectedTopics,
                 answerTimeLimit: action.payload.room.answerTimeLimit,
                 difficultyRange: action.payload.room.difficultyRange,
-                questionCount: action.payload.room.questionCount, // Add this line
+                questionCount: action.payload.room.questionCount,
                 maxPlayers: action.payload.room.maxPlayers,
                 isHost: false,
             };
@@ -133,13 +129,11 @@ function gameReducer(state, action) {
             };
 
         case "START_GAME":
-            // Just send selected topics - the server will generate or receive questions
             socket.emit("startGame", {
                 gameQuestions: generateQuestions(
                     state.selectedTopics,
-                    state.questionCount ||
-                        GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME, // Use custom question count
-                    state.difficultyRange || { min: 1, max: 10 }
+                    state.questionCount,
+                    state.difficultyRange
                 ),
             });
             return state;
@@ -183,7 +177,7 @@ function gameReducer(state, action) {
                 ...state,
                 answeringPlayerId: action.payload.playerId,
                 showAnswer: false,
-                typewriterInterrupted: true, // Set this to true when someone answers
+                typewriterInterrupted: true,
             };
 
         case "SUBMIT_ANSWER":
@@ -196,7 +190,7 @@ function gameReducer(state, action) {
                 submittedAnswer: action.payload.gameState.submittedAnswer,
                 correctAnswer: action.payload.gameState.correctAnswer,
                 answerResult: action.payload.gameState.answerResult,
-                answerExplanation: action.payload.gameState.answerExplanation, // Add this
+                answerExplanation: action.payload.gameState.answerExplanation,
                 showAnswer: true,
                 players: action.payload.players,
             };
@@ -261,7 +255,7 @@ function gameReducer(state, action) {
                 appealVotes: {},
                 appealPassed: null,
                 hasBeenAppealed: false,
-                typewriterInterrupted: false, // Reset typewriter state for new question
+                typewriterInterrupted: false,
             };
 
         case "GAME_ENDED":
@@ -309,152 +303,86 @@ export const GameProvider = ({ children }) => {
 
     // Set up socket event listeners
     useEffect(() => {
-        // Define event handler functions OUTSIDE the effect body
-        const handleRoomCreated = (data) => {
-            dispatch({ type: "ROOM_CREATED", payload: data });
-        };
-
-        const handlePlayerJoined = (data) => {
-            dispatch({ type: "PLAYER_JOINED", payload: data });
-        };
-
-        const handlePlayerLeft = (data) => {
-            dispatch({ type: "PLAYER_LEFT", payload: data });
-        };
-
-        const handleHostChanged = (data) => {
-            dispatch({ type: "HOST_CHANGED", payload: data });
-        };
-
-        const handlePlayerUpdated = (data) => {
-            dispatch({ type: "PLAYER_UPDATED", payload: data });
-        };
-
-        // Add debugging for game events
-        const handleGameStarted = (data) => {
-            console.log("Game started event received:", data);
-
-            if (
-                !data.gameState ||
-                !Array.isArray(data.gameState.gameQuestions) ||
-                data.gameState.gameQuestions.length === 0
-            ) {
-                console.error("Invalid game state received:", data);
-                dispatch({
-                    type: "SET_ERROR",
-                    payload: "無效的遊戲數據。請重新開始遊戲。",
-                });
-                return;
-            }
-
-            dispatch({ type: "GAME_STARTED", payload: data });
-        };
-
-        const handleQuestionAnswering = (data) => {
-            dispatch({ type: "QUESTION_ANSWERING", payload: data });
-        };
-
-        const handleAnswerSubmitted = (data) => {
-            dispatch({ type: "ANSWER_SUBMITTED", payload: data });
-        };
-
-        const handleAppealStarted = (data) => {
-            dispatch({ type: "APPEAL_STARTED", payload: data });
-        };
-
-        const handleAppealVoted = (data) => {
-            dispatch({ type: "APPEAL_VOTED", payload: data });
-        };
-
-        const handleAppealResolved = (data) => {
-            dispatch({ type: "APPEAL_RESOLVED", payload: data });
-        };
-
-        const handleNextQuestion = (data) => {
-            dispatch({ type: "QUESTION_ADVANCED", payload: data });
-        };
-
-        const handleGameEnded = (data) => {
-            dispatch({ type: "GAME_ENDED", payload: data });
-        };
-
-        // Connection events
         socket.on("connect", () => {
-            console.log("Connected to server");
             dispatch({ type: "SET_SOCKET_CONNECTED" });
         });
-
         socket.on("disconnect", () => {
-            console.log("Disconnected from server");
             dispatch({ type: "SET_SOCKET_CONNECTED", payload: false });
         });
-
-        // Error handling
         socket.on("error", (data) => {
-            console.error("Socket error:", data.message);
             dispatch({ type: "SET_ERROR", payload: data.message });
         });
-
-        // Room events
         socket.on("roomList", (rooms) => {
             dispatch({ type: "SET_AVAILABLE_ROOMS", payload: rooms });
         });
-
-        socket.on("roomCreated", handleRoomCreated);
+        socket.on("roomCreated", (data) => {
+            dispatch({ type: "ROOM_CREATED", payload: data });
+        });
         socket.on("joinedRoom", (data) => {
             dispatch({ type: "JOINED_ROOM", payload: data });
         });
-
-        socket.on("playerJoined", handlePlayerJoined);
-        socket.on("playerLeft", handlePlayerLeft);
-        socket.on("hostChanged", handleHostChanged);
-        socket.on("playerUpdated", handlePlayerUpdated);
-
-        // Game events
-        socket.on("gameStarted", handleGameStarted);
-        socket.on("questionAnswering", handleQuestionAnswering);
-        socket.on("answerSubmitted", handleAnswerSubmitted);
-        socket.on("appealStarted", handleAppealStarted);
-        socket.on("appealVoted", handleAppealVoted);
-        socket.on("appealResolved", handleAppealResolved);
-        socket.on("nextQuestion", handleNextQuestion);
-        socket.on("gameEnded", handleGameEnded);
-
-        // Add a new event listener for typewriter interruption
+        socket.on("playerJoined", (data) => {
+            dispatch({ type: "PLAYER_JOINED", payload: data });
+        });
+        socket.on("playerLeft", (data) => {
+            dispatch({ type: "PLAYER_LEFT", payload: data });
+        });
+        socket.on("hostChanged", (data) => {
+            dispatch({ type: "HOST_CHANGED", payload: data });
+        });
+        socket.on("playerUpdated", (data) => {
+            dispatch({ type: "PLAYER_UPDATED", payload: data });
+        });
+        socket.on("gameStarted", (data) => {
+            dispatch({ type: "GAME_STARTED", payload: data });
+        });
+        socket.on("questionAnswering", (data) => {
+            dispatch({ type: "QUESTION_ANSWERING", payload: data });
+        });
+        socket.on("answerSubmitted", (data) => {
+            dispatch({ type: "ANSWER_SUBMITTED", payload: data });
+        });
+        socket.on("appealStarted", (data) => {
+            dispatch({ type: "APPEAL_STARTED", payload: data });
+        });
+        socket.on("appealVoted", (data) => {
+            dispatch({ type: "APPEAL_VOTED", payload: data });
+        });
+        socket.on("appealResolved", (data) => {
+            dispatch({ type: "APPEAL_RESOLVED", payload: data });
+        });
+        socket.on("nextQuestion", (data) => {
+            dispatch({ type: "QUESTION_ADVANCED", payload: data });
+        });
+        socket.on("gameEnded", (data) => {
+            dispatch({ type: "GAME_ENDED", payload: data });
+        });
         socket.on("typewriterInterrupted", () => {
             dispatch({ type: "TYPEWRITER_INTERRUPTED" });
         });
 
-        // Add event listener for question skipped
-        socket.on("questionSkipped", (data) => {
-            console.log(`Question ${data.questionIndex + 1} skipped by host`);
-        });
-
-        // Get available rooms on connection
         socket.emit("getRoomList");
 
-        // Clean up event listeners on unmount
         return () => {
             socket.off("connect");
             socket.off("disconnect");
             socket.off("error");
             socket.off("roomList");
-            socket.off("roomCreated", handleRoomCreated);
+            socket.off("roomCreated");
             socket.off("joinedRoom");
-            socket.off("playerJoined", handlePlayerJoined);
-            socket.off("playerLeft", handlePlayerLeft);
-            socket.off("hostChanged", handleHostChanged);
-            socket.off("playerUpdated", handlePlayerUpdated);
-            socket.off("gameStarted", handleGameStarted);
-            socket.off("questionAnswering", handleQuestionAnswering);
-            socket.off("answerSubmitted", handleAnswerSubmitted);
-            socket.off("appealStarted", handleAppealStarted);
-            socket.off("appealVoted", handleAppealVoted);
-            socket.off("appealResolved", handleAppealResolved);
-            socket.off("nextQuestion", handleNextQuestion);
-            socket.off("gameEnded", handleGameEnded);
+            socket.off("playerJoined");
+            socket.off("playerLeft");
+            socket.off("hostChanged");
+            socket.off("playerUpdated");
+            socket.off("gameStarted");
+            socket.off("questionAnswering");
+            socket.off("answerSubmitted");
+            socket.off("appealStarted");
+            socket.off("appealVoted");
+            socket.off("appealResolved");
+            socket.off("nextQuestion");
+            socket.off("gameEnded");
             socket.off("typewriterInterrupted");
-            socket.off("questionSkipped");
         };
     }, []);
 
@@ -480,9 +408,8 @@ export const GameProvider = ({ children }) => {
         try {
             const questions = generateQuestions(
                 state.selectedTopics,
-                state.questionCount ||
-                    GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME, // Use custom question count
-                state.difficultyRange || { min: 1, max: 10 }
+                state.questionCount,
+                state.difficultyRange
             );
 
             if (!questions || questions.length === 0) {

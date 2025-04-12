@@ -23,28 +23,20 @@ const HostGameScreen = () => {
     const [hostName, setHostName] = useState("");
     const [selectedTopics, setSelectedTopics] = useState([]);
     const [error, setError] = useState("");
-    // Add new state for answer time limit
     const [answerTimeLimit, setAnswerTimeLimit] = useState(
-        GAME_CONSTANTS.ANSWER_TIME_LIMIT
+        GAME_CONSTANTS.DEFAULT_ANSWER_TIME_LIMIT
     );
-
-    // Add new state for difficulty filter
     const [minDifficulty, setMinDifficulty] = useState(1);
     const [maxDifficulty, setMaxDifficulty] = useState(10);
-
-    // Add new state for question count
     const [questionCount, setQuestionCount] = useState(
         GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME
     );
-
-    // Use the hook to get topics
     const { topics, loading } = useQuestionData();
 
     // Clear any global errors when component mounts
     useEffect(() => {
         clearError();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Empty dependency array - will only run once on mount
+    }, []);
 
     // Show error from state if present
     useEffect(() => {
@@ -95,12 +87,11 @@ const HostGameScreen = () => {
                 min: minDifficulty,
                 max: maxDifficulty,
             },
-            questionCount, // Add questionCount to room creation
+            questionCount,
         });
     };
 
     const handleCancel = () => {
-        // Navigate back to welcome screen
         window.location.href = "/";
     };
 
@@ -173,7 +164,6 @@ const HostGameScreen = () => {
                         />
                     </div>
 
-                    {/* Add new timer control slider */}
                     <div className="form-group">
                         <label>答題時間限制: {answerTimeLimit} 秒</label>
                         <input
@@ -187,7 +177,6 @@ const HostGameScreen = () => {
                         />
                     </div>
 
-                    {/* Add new difficulty filter sliders */}
                     <div className="form-group">
                         <label>
                             題目難度範圍: {minDifficulty.toFixed(1)} -{" "}
@@ -237,7 +226,6 @@ const HostGameScreen = () => {
                         </div>
                     </div>
 
-                    {/* Add new slider for question count after difficulty sliders */}
                     <div className="form-group">
                         <label>題目數量: {questionCount}</label>
                         <input

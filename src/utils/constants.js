@@ -8,13 +8,12 @@ export const GAME_CONSTANTS = {
     // Questions
     MIN_QUESTIONS_PER_GAME: 5,
     MAX_QUESTIONS_PER_GAME: 100,
-    QUESTIONS_PER_GAME: 30,
     DEFAULT_QUESTIONS_PER_GAME: 30,
 
     // Timer settings
     MIN_ANSWER_TIME: 15, // seconds
     MAX_ANSWER_TIME: 60, // seconds
-    ANSWER_TIME_LIMIT: 15, // seconds
+    DEFAULT_ANSWER_TIME_LIMIT: 15, // seconds
 
     // UI constants
     PODIUM_SIZE: 3, // Number of players shown on podium
