@@ -107,7 +107,8 @@ const GameScreen = () => {
         state.showAnswer &&
         !state.answerResult &&
         state.answeringPlayerId === state.playerId &&
-        !state.hasBeenAppealed;
+        !state.hasBeenAppealed &&
+        state.players.length > 1;
 
     // Start timer function
     const startTimer = (duration, onComplete) => {
