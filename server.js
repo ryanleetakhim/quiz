@@ -4,6 +4,7 @@ const socketIo = require("socket.io");
 const path = require("path");
 const { nanoid } = require("nanoid");
 const { checkAnswer } = require("./src/services/geminiService");
+const { GAME_CONSTANTS } = require("./src/utils/constants"); // Import constants
 require("dotenv").config();
 
 const app = express();
@@ -121,6 +122,83 @@ io.on("connection", (socket) => {
             player: player,
             players: room.players,
         });
+    });
+
+    // Handle updating room settings (by host)
+    socket.on("updateRoomSettings", (newSettings) => {
+        const roomId = socket.roomId;
+        if (!roomId || !rooms[roomId]) {
+            return socket.emit("error", { message: "Room not found" });
+        }
+
+        const room = rooms[roomId];
+        const player = room.players.find((p) => p.id === socket.id);
+
+        // Only host can update settings, and only before game starts
+        if (player && player.isHost && room.gameState.status === "waiting") {
+            // Validate and update settings
+            room.name = newSettings.roomName || room.name;
+            room.isPrivate =
+                typeof newSettings.isPrivate === "boolean"
+                    ? newSettings.isPrivate
+                    : room.isPrivate;
+            if (room.isPrivate) {
+                // Only update password if provided, otherwise keep the old one
+                room.password = newSettings.password || room.password;
+            } else {
+                room.password = null; // Clear password if room becomes public
+            }
+            room.maxPlayers =
+                newSettings.maxPlayers >= GAME_CONSTANTS.MIN_PLAYERS &&
+                newSettings.maxPlayers <= GAME_CONSTANTS.MAX_PLAYERS
+                    ? newSettings.maxPlayers
+                    : room.maxPlayers;
+            room.answerTimeLimit =
+                newSettings.answerTimeLimit >= GAME_CONSTANTS.MIN_ANSWER_TIME &&
+                newSettings.answerTimeLimit <= GAME_CONSTANTS.MAX_ANSWER_TIME
+                    ? newSettings.answerTimeLimit
+                    : room.answerTimeLimit;
+            if (
+                newSettings.difficultyRange &&
+                typeof newSettings.difficultyRange.min === "number" &&
+                typeof newSettings.difficultyRange.max === "number" &&
+                newSettings.difficultyRange.min >= 1 &&
+                newSettings.difficultyRange.max <= 10 &&
+                newSettings.difficultyRange.min <
+                    newSettings.difficultyRange.max
+            ) {
+                room.difficultyRange = newSettings.difficultyRange;
+            }
+            room.questionCount =
+                newSettings.questionCount >=
+                    GAME_CONSTANTS.MIN_QUESTIONS_PER_GAME &&
+                newSettings.questionCount <=
+                    GAME_CONSTANTS.MAX_QUESTIONS_PER_GAME
+                    ? newSettings.questionCount
+                    : room.questionCount;
+            if (
+                Array.isArray(newSettings.selectedTopics) &&
+                newSettings.selectedTopics.length > 0
+            ) {
+                room.selectedTopics = newSettings.selectedTopics;
+            }
+
+            // Broadcast updated settings to all players in the room
+            io.to(roomId).emit("roomSettingsUpdated", { room });
+
+            // Update room list for lobby if public room settings changed
+            if (!room.isPrivate) {
+                io.emit("roomList", getPublicRooms());
+            }
+        } else if (!player || !player.isHost) {
+            socket.emit("error", {
+                message: "Only the host can change settings.",
+            });
+        } else if (room.gameState.status !== "waiting") {
+            socket.emit("error", {
+                message: "Cannot change settings after game has started.",
+            });
+        }
     });
 
     // Handle player ready toggle

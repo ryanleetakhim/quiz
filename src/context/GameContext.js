@@ -44,6 +44,7 @@ const initialState = {
     typewriterInterrupted: false,
     difficultyRange: { min: 1, max: 10 },
     questionCount: GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME,
+    answerTimeLimit: GAME_CONSTANTS.DEFAULT_ANSWER_TIME_LIMIT,
 };
 
 function gameReducer(state, action) {
@@ -94,6 +95,7 @@ function gameReducer(state, action) {
                 difficultyRange: action.payload.room.difficultyRange,
                 questionCount: action.payload.room.questionCount,
                 maxPlayers: action.payload.room.maxPlayers,
+                isPrivate: action.payload.room.isPrivate,
                 isHost: false,
             };
 
@@ -298,6 +300,18 @@ function gameReducer(state, action) {
             socket.emit("skipQuestion");
             return state;
 
+        case "ROOM_SETTINGS_UPDATED":
+            return {
+                ...state,
+                roomName: action.payload.room.name,
+                isPrivate: action.payload.room.isPrivate,
+                maxPlayers: action.payload.room.maxPlayers,
+                selectedTopics: action.payload.room.selectedTopics,
+                answerTimeLimit: action.payload.room.answerTimeLimit,
+                difficultyRange: action.payload.room.difficultyRange,
+                questionCount: action.payload.room.questionCount,
+            };
+
         default:
             return state;
     }
@@ -364,6 +378,9 @@ export const GameProvider = ({ children }) => {
         socket.on("typewriterInterrupted", () => {
             dispatch({ type: "TYPEWRITER_INTERRUPTED" });
         });
+        socket.on("roomSettingsUpdated", (data) => {
+            dispatch({ type: "ROOM_SETTINGS_UPDATED", payload: data });
+        });
 
         socket.emit("getRoomList");
 
@@ -387,6 +404,7 @@ export const GameProvider = ({ children }) => {
             socket.off("nextQuestion");
             socket.off("gameEnded");
             socket.off("typewriterInterrupted");
+            socket.off("roomSettingsUpdated");
         };
     }, []);
 
@@ -450,6 +468,10 @@ export const GameProvider = ({ children }) => {
         dispatch({ type: "RETURN_TO_ROOM" });
     };
 
+    const updateRoomSettings = (settings) => {
+        socket.emit("updateRoomSettings", settings);
+    };
+
     return (
         <GameContext.Provider
             value={{
@@ -463,6 +485,7 @@ export const GameProvider = ({ children }) => {
                 clearError,
                 fetchAvailableRooms,
                 returnToRoom,
+                updateRoomSettings,
             }}
         >
             {children}
