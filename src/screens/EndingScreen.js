@@ -1,20 +1,24 @@
 import React from "react";
+import { useParams, useNavigate } from "react-router-dom"; // Import hooks
 import { useGame } from "../context/GameContext";
 import { GAME_CONSTANTS } from "../utils/constants";
 
 const EndingScreen = () => {
     const { state, leaveRoom, returnToRoom } = useGame();
+    const { roomId } = useParams(); // Get roomId from URL
+    const navigate = useNavigate(); // Use navigate hook
 
     // Sort players by score
     const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
 
     const handleReturnToRoom = () => {
-        returnToRoom();
+        returnToRoom(); // Dispatch RETURN_TO_ROOM action
+        navigate(`/room/${roomId}`); // Navigate back to the room
     };
 
     const handleReturnToHome = () => {
-        // Leave the room completely
-        leaveRoom();
+        leaveRoom(); // Dispatch LEAVE_ROOM action
+        navigate("/"); // Navigate back to welcome screen
     };
 
     return (
@@ -81,13 +85,13 @@ const EndingScreen = () => {
                 <div className="ending-actions">
                     <button
                         className="btn-primary"
-                        onClick={handleReturnToRoom}
+                        onClick={handleReturnToRoom} // Use updated handler
                     >
                         返回房間
                     </button>
                     <button
                         className="btn-secondary"
-                        onClick={handleReturnToHome}
+                        onClick={handleReturnToHome} // Use updated handler
                     >
                         返回首頁
                     </button>

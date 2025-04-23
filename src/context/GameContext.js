@@ -13,7 +13,6 @@ const GameContext = createContext();
 const socket = io(window.location.origin);
 
 const initialState = {
-    currentScreen: "welcome",
     roomName: "",
     isPrivate: false,
     password: "",
@@ -49,9 +48,6 @@ const initialState = {
 
 function gameReducer(state, action) {
     switch (action.type) {
-        case "NAVIGATE":
-            return { ...state, currentScreen: action.payload };
-
         case "SET_SOCKET_CONNECTED":
             return { ...state, socketConnected: true, playerId: socket.id };
 
@@ -76,7 +72,6 @@ function gameReducer(state, action) {
         case "ROOM_CREATED":
             return {
                 ...state,
-                currentScreen: "room",
                 roomId: action.payload.roomId,
                 roomName: action.payload.room.name,
                 players: action.payload.room.players,
@@ -91,7 +86,6 @@ function gameReducer(state, action) {
         case "JOINED_ROOM":
             return {
                 ...state,
-                currentScreen: "room",
                 roomId: action.payload.roomId,
                 roomName: action.payload.room.name,
                 players: action.payload.room.players,
@@ -141,7 +135,6 @@ function gameReducer(state, action) {
         case "GAME_STARTED":
             return {
                 ...state,
-                currentScreen: "game",
                 gameQuestions: action.payload.gameState.gameQuestions,
                 currentQuestionIndex: 0,
                 players: state.players.map((player) => ({
@@ -261,7 +254,6 @@ function gameReducer(state, action) {
         case "GAME_ENDED":
             return {
                 ...state,
-                currentScreen: "ending",
                 gameEnded: true,
                 players: action.payload.players,
             };
@@ -269,7 +261,21 @@ function gameReducer(state, action) {
         case "RETURN_TO_ROOM":
             return {
                 ...state,
-                currentScreen: "room",
+                gameQuestions: [],
+                currentQuestionIndex: 0,
+                answeringPlayerId: null,
+                submittedAnswer: null,
+                correctAnswer: null,
+                answerResult: null,
+                showAnswer: false,
+                gameEnded: false,
+                appealInProgress: false,
+                appealPlayerId: null,
+                appealingAnswer: null,
+                appealVotes: {},
+                appealPassed: null,
+                hasBeenAppealed: false,
+                typewriterInterrupted: false,
                 players: state.players.map((player) =>
                     player.isHost ? player : { ...player, isReady: false }
                 ),
@@ -278,11 +284,10 @@ function gameReducer(state, action) {
         case "LEAVE_ROOM":
             socket.emit("leaveRoom");
             return {
-                ...state,
-                currentScreen: "welcome",
-                roomId: null,
-                players: [],
-                isHost: false,
+                ...initialState,
+                socketConnected: state.socketConnected,
+                playerId: state.playerId,
+                availableRooms: state.availableRooms,
             };
 
         case "TOGGLE_PLAYER_READY":
@@ -301,7 +306,6 @@ function gameReducer(state, action) {
 export const GameProvider = ({ children }) => {
     const [state, dispatch] = useReducer(gameReducer, initialState);
 
-    // Set up socket event listeners
     useEffect(() => {
         socket.on("connect", () => {
             dispatch({ type: "SET_SOCKET_CONNECTED" });
@@ -386,7 +390,6 @@ export const GameProvider = ({ children }) => {
         };
     }, []);
 
-    // Helper functions for API calls
     const createRoom = (roomData) => {
         socket.emit("createRoom", roomData);
     };
@@ -403,7 +406,6 @@ export const GameProvider = ({ children }) => {
         socket.emit("toggleReady");
     };
 
-    // Update the startGame function to use the custom question count
     const startGame = () => {
         try {
             const questions = generateQuestions(
@@ -435,17 +437,14 @@ export const GameProvider = ({ children }) => {
         dispatch({ type: "LEAVE_ROOM" });
     };
 
-    // Add fetchAvailableRooms function
     const fetchAvailableRooms = useCallback(() => {
         socket.emit("fetchRooms");
     }, []);
 
-    // Wrap clearError with useCallback to maintain stable reference
     const clearError = useCallback(() => {
         dispatch({ type: "CLEAR_ERROR" });
     }, []);
 
-    // Add returnToRoom function in the GameProvider component
     const returnToRoom = () => {
         socket.emit("returnToRoom");
         dispatch({ type: "RETURN_TO_ROOM" });

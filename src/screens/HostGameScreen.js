@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useGame } from "../context/GameContext";
 import { useQuestionData } from "../data/questionBank";
 import { GAME_CONSTANTS } from "../utils/constants";
@@ -14,6 +15,7 @@ const TopicItem = ({ topic, isSelected, onClick }) => (
 
 const HostGameScreen = () => {
     const { state, createRoom, clearError } = useGame();
+    const navigate = useNavigate();
     const [roomName, setRoomName] = useState("");
     const [isPrivate, setIsPrivate] = useState(false);
     const [password, setPassword] = useState("");
@@ -36,7 +38,7 @@ const HostGameScreen = () => {
     // Clear any global errors when component mounts
     useEffect(() => {
         clearError();
-    }, []);
+    }, [clearError]); // Dependency array corrected
 
     // Show error from state if present
     useEffect(() => {
@@ -44,6 +46,15 @@ const HostGameScreen = () => {
             setError(state.error);
         }
     }, [state.error]);
+
+    // Navigate to room when roomId is set and user is host
+    useEffect(() => {
+        if (state.roomId && state.isHost) {
+            navigate(`/room/${state.roomId}`);
+        }
+        // Add cleanup or condition to prevent navigation if component unmounts
+        // or if the user navigates away before roomId is set.
+    }, [state.roomId, state.isHost, navigate]);
 
     const handleTopicToggle = (topicId) => {
         if (selectedTopics.includes(topicId)) {
@@ -75,6 +86,7 @@ const HostGameScreen = () => {
         }
 
         setError("");
+        // createRoom is now just emitting, navigation handled by useEffect
         createRoom({
             roomName,
             isPrivate,
@@ -92,7 +104,7 @@ const HostGameScreen = () => {
     };
 
     const handleCancel = () => {
-        window.location.href = "/";
+        navigate("/"); // Navigate back to welcome screen
     };
 
     // Simplify loading condition

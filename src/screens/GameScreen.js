@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom"; // Import hooks
 import { useGame } from "../context/GameContext";
 import { GAME_CONSTANTS } from "../utils/constants";
 
@@ -46,6 +47,8 @@ const TypewriterEffect = ({ text }) => {
 
 const GameScreen = () => {
     const { state, dispatch } = useGame();
+    const { roomId } = useParams(); // Get roomId from URL
+    const navigate = useNavigate(); // Use navigate hook
     const [answer, setAnswer] = useState("");
     const [timeLeft, setTimeLeft] = useState(null);
     const timerRef = useRef(null);
@@ -187,7 +190,6 @@ const GameScreen = () => {
         });
     };
 
-    // NEW: Handle progressing to next question (for host)
     const handleNextQuestion = () => {
         dispatch({ type: "NEXT_QUESTION" });
     };
@@ -228,7 +230,15 @@ const GameScreen = () => {
         }
     }, [state.showAnswer]);
 
-    if (!currentQuestion) {
+    // Navigate to ending screen when game ends
+    useEffect(() => {
+        if (state.gameEnded) {
+            navigate(`/ending/${roomId}`);
+        }
+    }, [state.gameEnded, roomId, navigate]);
+
+    if (!currentQuestion && !state.gameEnded) {
+        // Added !state.gameEnded check to prevent flicker before navigation
         return (
             <div className="game-screen">
                 <div className="container">
@@ -248,6 +258,9 @@ const GameScreen = () => {
                 </div>
             </div>
         );
+    } else if (!currentQuestion && state.gameEnded) {
+        // Optional: Render nothing or a minimal loading state while navigating
+        return null;
     }
 
     const showNextQuestionButton =

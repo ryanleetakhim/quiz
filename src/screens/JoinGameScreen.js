@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { useGame } from "../context/GameContext";
 import ConnectionStatus from "../components/ConnectionStatus";
 
 const JoinGameScreen = () => {
     const { state, dispatch, joinRoom, fetchAvailableRooms, clearError } =
         useGame();
+    const navigate = useNavigate(); // Use navigate hook
     const [playerName, setPlayerName] = useState("");
     const [selectedRoomId, setSelectedRoomId] = useState("");
     const [password, setPassword] = useState("");
@@ -26,6 +28,14 @@ const JoinGameScreen = () => {
         return () => clearInterval(interval);
     }, [fetchAvailableRooms, clearError]);
 
+    // Navigate to room when roomId is set and user is not host
+    useEffect(() => {
+        // Ensure navigation only happens after successfully joining
+        if (state.roomId && !state.isHost) {
+            navigate(`/room/${state.roomId}`);
+        }
+    }, [state.roomId, state.isHost, navigate]);
+
     // Handle form submission for joining a public room
     const handleJoinPublicRoom = (e) => {
         e.preventDefault();
@@ -45,7 +55,7 @@ const JoinGameScreen = () => {
             return;
         }
 
-        joinRoom(selectedRoomId, playerName);
+        joinRoom(selectedRoomId, playerName); // Just emit, navigation handled by useEffect
     };
 
     // Handle form submission for joining a private room
@@ -67,12 +77,12 @@ const JoinGameScreen = () => {
             return;
         }
 
-        joinRoom(selectedRoomId, playerName, password);
+        joinRoom(selectedRoomId, playerName, password); // Just emit, navigation handled by useEffect
     };
 
     // Handle going back to welcome screen
     const handleBackToWelcome = () => {
-        dispatch({ type: "NAVIGATE", payload: "welcome" });
+        navigate("/"); // Navigate back to welcome screen
     };
 
     return (
@@ -172,7 +182,7 @@ const JoinGameScreen = () => {
                                 <button
                                     type="button"
                                     className="btn-secondary"
-                                    onClick={handleBackToWelcome}
+                                    onClick={handleBackToWelcome} // Keep this handler
                                 >
                                     返回
                                 </button>
@@ -244,7 +254,7 @@ const JoinGameScreen = () => {
                                 <button
                                     type="button"
                                     className="btn-secondary"
-                                    onClick={handleBackToWelcome}
+                                    onClick={handleBackToWelcome} // Keep this handler
                                 >
                                     返回
                                 </button>

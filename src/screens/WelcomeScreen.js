@@ -1,15 +1,15 @@
 import React from "react";
-import { useGame } from "../context/GameContext";
+import { useNavigate } from "react-router-dom";
 
 const WelcomeScreen = () => {
-    const { dispatch } = useGame();
+    const navigate = useNavigate();
 
     const handleHostGame = () => {
-        dispatch({ type: "NAVIGATE", payload: "host" });
+        navigate("/host");
     };
 
     const handleJoinGame = () => {
-        dispatch({ type: "NAVIGATE", payload: "join" });
+        navigate("/join");
     };
 
     return (

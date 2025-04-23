@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom"; // Import hooks
 import { useGame } from "../context/GameContext";
 
 const PlayerCard = ({ player, isCurrentPlayer, onToggleReady }) => (
@@ -37,11 +38,39 @@ const PlayerCard = ({ player, isCurrentPlayer, onToggleReady }) => (
 
 const RoomScreen = () => {
     const { state, toggleReady, startGame, leaveRoom, clearError } = useGame();
+    const { roomId } = useParams(); // Get roomId from URL
+    const navigate = useNavigate(); // Use navigate hook
 
     // Clear any errors when component mounts
     useEffect(() => {
         clearError();
-    }, [clearError]);
+        // Optional: If state.roomId doesn't match URL roomId, maybe leave/redirect?
+        // Or emit an event to sync state if needed, depends on desired behavior for direct URL access.
+        if (state.roomId && state.roomId !== roomId) {
+            console.warn("State roomId mismatch with URL roomId");
+            // Decide how to handle mismatch, e.g., navigate('/') or leaveRoom()
+        }
+    }, [clearError, roomId, state.roomId]);
+
+    // Navigate to game screen when game starts
+    useEffect(() => {
+        // Check for a reliable indicator that the game has started
+        // Using gameQuestions length and index might be more robust than a flag
+        if (
+            state.gameQuestions &&
+            state.gameQuestions.length > 0 &&
+            state.currentQuestionIndex === 0 &&
+            !state.gameEnded // Ensure game hasn't ended immediately
+        ) {
+            navigate(`/game/${roomId}`);
+        }
+    }, [
+        state.gameQuestions,
+        state.currentQuestionIndex,
+        state.gameEnded,
+        roomId,
+        navigate,
+    ]);
 
     // Check if all non-host players are ready
     const allPlayersReady = () => {
@@ -54,17 +83,22 @@ const RoomScreen = () => {
     };
 
     const handleStartGame = () => {
+        // startGame just emits, navigation handled by useEffect
         startGame();
     };
 
     const handleLeaveRoom = () => {
-        leaveRoom();
+        leaveRoom(); // Dispatch LEAVE_ROOM action
+        navigate("/"); // Navigate back to welcome screen
     };
+
+    // Display roomId from URL or state
+    const displayRoomId = roomId || state.roomId;
 
     return (
         <div className="room-screen">
             <div className="container">
-                <h2>{state.roomName}</h2>
+                <h2>{state.roomName || `房間 ${displayRoomId}`}</h2>
 
                 {state.error && (
                     <div className="error-message">{state.error}</div>
@@ -72,7 +106,7 @@ const RoomScreen = () => {
 
                 <div className="room-info">
                     <div className="room-detail">
-                        <span className="label">房間ID:</span> {state.roomId}
+                        <span className="label">房間ID:</span> {displayRoomId}
                     </div>
                     <div className="room-detail">
                         <span className="label">玩家:</span>{" "}

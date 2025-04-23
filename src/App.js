@@ -1,39 +1,28 @@
 import React from "react";
-import { GameProvider, useGame } from "./context/GameContext";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { GameProvider } from "./context/GameContext";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import HostGameScreen from "./screens/HostGameScreen";
 import JoinGameScreen from "./screens/JoinGameScreen";
-import RoomScreen from "./screens/RoomScreen"; // Make sure this path is correct
+import RoomScreen from "./screens/RoomScreen";
 import GameScreen from "./screens/GameScreen";
 import EndingScreen from "./screens/EndingScreen";
 import "./styles.css";
 
-const GameRouter = () => {
-    const { state } = useGame();
-
-    // Render the appropriate screen based on the current state
-    switch (state.currentScreen) {
-        case "welcome":
-            return <WelcomeScreen />;
-        case "host":
-            return <HostGameScreen />;
-        case "join":
-            return <JoinGameScreen />;
-        case "room":
-            return <RoomScreen />;
-        case "game":
-            return <GameScreen />;
-        case "ending":
-            return <EndingScreen />;
-        default:
-            return <WelcomeScreen />;
-    }
-};
-
 function App() {
     return (
         <GameProvider>
-            <GameRouter />
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/" element={<WelcomeScreen />} />
+                    <Route path="/host" element={<HostGameScreen />} />
+                    <Route path="/join" element={<JoinGameScreen />} />
+                    <Route path="/room/:roomId" element={<RoomScreen />} />
+                    <Route path="/game/:roomId" element={<GameScreen />} />
+                    <Route path="/ending/:roomId" element={<EndingScreen />} />
+                    <Route path="*" element={<WelcomeScreen />} />{" "}
+                </Routes>
+            </BrowserRouter>
         </GameProvider>
     );
 }
