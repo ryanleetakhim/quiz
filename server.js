@@ -240,6 +240,11 @@ io.on("connection", (socket) => {
         const player = room.players.find((p) => p.id === socket.id);
 
         if (player && player.isHost) {
+            // Reset all player scores to 0 when starting a new game
+            room.players.forEach((p) => {
+                p.score = 0;
+            });
+
             room.gameState = {
                 ...room.gameState,
                 status: "initializing", // Changed from "playing" to "initializing"
