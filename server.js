@@ -242,14 +242,31 @@ io.on("connection", (socket) => {
         if (player && player.isHost) {
             room.gameState = {
                 ...room.gameState,
-                status: "playing",
+                status: "initializing", // Changed from "playing" to "initializing"
                 gameQuestions: data.gameQuestions,
                 currentQuestionIndex: 0,
             };
 
+            // First emit game initialized event
             io.to(roomId).emit("gameStarted", {
                 gameState: room.gameState,
             });
+
+            // Wait for 2 seconds to ensure all clients have initialized
+            setTimeout(() => {
+                // Only proceed if the room still exists and is still initializing
+                if (
+                    rooms[roomId] &&
+                    rooms[roomId].gameState.status === "initializing"
+                ) {
+                    rooms[roomId].gameState.status = "playing";
+
+                    // Send an event to notify clients the game is truly starting
+                    io.to(roomId).emit("gameReady", {
+                        gameState: rooms[roomId].gameState,
+                    });
+                }
+            }, 2000);
         }
     });
 
