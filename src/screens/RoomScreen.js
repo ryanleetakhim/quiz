@@ -78,6 +78,7 @@ const RoomScreen = () => {
                 answerTimeLimit: state.answerTimeLimit,
                 difficultyRange: state.difficultyRange,
                 questionCount: state.questionCount,
+                typewriterSpeed: state.typewriterSpeed,
             });
         } else {
             setEditableSettings(null); // Clear if not host
@@ -94,6 +95,7 @@ const RoomScreen = () => {
         state.answerTimeLimit,
         state.difficultyRange,
         state.questionCount,
+        state.typewriterSpeed,
         state.error, // Also react to global errors potentially related to settings
     ]);
 
@@ -380,6 +382,31 @@ const RoomScreen = () => {
                                 onChange={(e) =>
                                     handleRangeSettingChange(
                                         "answerTimeLimit",
+                                        e.target.value
+                                    )
+                                }
+                            />
+                        </div>
+
+                        {/* Typewriter Speed */}
+                        <div className="form-group">
+                            <label>
+                                題目顯示速度: {editableSettings.typewriterSpeed}{" "}
+                                ms
+                                <span className="speed-hint">
+                                    {" "}
+                                    (較小值 = 較快速度)
+                                </span>
+                            </label>
+                            <input
+                                type="range"
+                                name="typewriterSpeed"
+                                min={GAME_CONSTANTS.MIN_TYPEWRITER_SPEED}
+                                max={GAME_CONSTANTS.MAX_TYPEWRITER_SPEED}
+                                value={editableSettings.typewriterSpeed}
+                                onChange={(e) =>
+                                    handleRangeSettingChange(
+                                        "typewriterSpeed",
                                         e.target.value
                                     )
                                 }

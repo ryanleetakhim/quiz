@@ -33,6 +33,9 @@ const HostGameScreen = () => {
     const [questionCount, setQuestionCount] = useState(
         GAME_CONSTANTS.DEFAULT_QUESTIONS_PER_GAME
     );
+    const [typewriterSpeed, setTypewriterSpeed] = useState(
+        GAME_CONSTANTS.DEFAULT_TYPEWRITER_SPEED
+    );
     const { topics, loading } = useQuestionData();
 
     // Clear any global errors when component mounts
@@ -100,6 +103,7 @@ const HostGameScreen = () => {
                 max: maxDifficulty,
             },
             questionCount,
+            typewriterSpeed,
         });
     };
 
@@ -185,6 +189,25 @@ const HostGameScreen = () => {
                             value={answerTimeLimit}
                             onChange={(e) =>
                                 setAnswerTimeLimit(parseInt(e.target.value))
+                            }
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label>
+                            題目顯示速度: {typewriterSpeed} ms
+                            <span className="speed-hint">
+                                {" "}
+                                (較小值 = 較快速度)
+                            </span>
+                        </label>
+                        <input
+                            type="range"
+                            min={GAME_CONSTANTS.MIN_TYPEWRITER_SPEED}
+                            max={GAME_CONSTANTS.MAX_TYPEWRITER_SPEED}
+                            value={typewriterSpeed}
+                            onChange={(e) =>
+                                setTypewriterSpeed(parseInt(e.target.value))
                             }
                         />
                     </div>

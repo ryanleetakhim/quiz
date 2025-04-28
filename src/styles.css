@@ -1108,3 +1108,9 @@ input:focus {
 .skip-button:hover {
     background-color: #e68a00;
 }
+
+.speed-hint {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #666;
+}

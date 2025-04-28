@@ -25,12 +25,12 @@ const TypewriterEffect = ({ text }) => {
                 clearInterval(interval);
                 setIsComplete(true);
             }
-        }, GAME_CONSTANTS.TYPEWRITER_SPEED);
+        }, state.typewriterSpeed || GAME_CONSTANTS.DEFAULT_TYPEWRITER_SPEED);
 
         intervalRef.current = interval;
 
         return () => clearInterval(interval);
-    }, [text]);
+    }, [text, state.typewriterSpeed]);
 
     // Add effect to respond to global typewriter interrupt
     useEffect(() => {

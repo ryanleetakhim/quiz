@@ -45,6 +45,8 @@ io.on("connection", (socket) => {
             answerTimeLimit: data.answerTimeLimit,
             difficultyRange: data.difficultyRange,
             questionCount: data.questionCount,
+            typewriterSpeed:
+                data.typewriterSpeed || GAME_CONSTANTS.DEFAULT_TYPEWRITER_SPEED,
             players: [
                 {
                     id: socket.id,
@@ -181,6 +183,17 @@ io.on("connection", (socket) => {
                 newSettings.selectedTopics.length > 0
             ) {
                 room.selectedTopics = newSettings.selectedTopics;
+            }
+
+            // Add typewriter speed validation
+            if (
+                typeof newSettings.typewriterSpeed === "number" &&
+                newSettings.typewriterSpeed >=
+                    GAME_CONSTANTS.MIN_TYPEWRITER_SPEED &&
+                newSettings.typewriterSpeed <=
+                    GAME_CONSTANTS.MAX_TYPEWRITER_SPEED
+            ) {
+                room.typewriterSpeed = newSettings.typewriterSpeed;
             }
 
             // Broadcast updated settings to all players in the room

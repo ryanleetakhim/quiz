@@ -19,5 +19,7 @@ export const GAME_CONSTANTS = {
     PODIUM_SIZE: 3, // Number of players shown on podium
 
     // Timings (milliseconds)
-    TYPEWRITER_SPEED: 100,
+    MIN_TYPEWRITER_SPEED: 30, // Fast (lower value = faster)
+    MAX_TYPEWRITER_SPEED: 200, // Slow (higher value = slower)
+    DEFAULT_TYPEWRITER_SPEED: 100,
 };
