@@ -1,7 +1,27 @@
 import Papa from "papaparse";
 import { useState, useEffect } from "react";
+import { db } from "../config/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
-// Function to load questions from CSV
+// Function to load questions from Firestore
+const loadQuestionsFromFirestore = async () => {
+    try {
+        const questionsCollection = collection(db, "questions");
+        const querySnapshot = await getDocs(questionsCollection);
+
+        const questions = [];
+        querySnapshot.forEach((doc) => {
+            questions.push({ id: doc.id, ...doc.data() });
+        });
+
+        return questions;
+    } catch (error) {
+        console.error("Error fetching questions from Firestore:", error);
+        throw error;
+    }
+};
+
+// Fallback to CSV if Firebase fails
 const loadQuestionsFromCSV = async () => {
     try {
         const response = await fetch("/questions.csv");
@@ -28,11 +48,23 @@ const loadQuestionsFromCSV = async () => {
     }
 };
 
-// Process the data from CSV into our application format
+// Process the data from database into our application format
 const processQuestionData = async () => {
     try {
-        const rawQuestions = await loadQuestionsFromCSV();
+        // Try to load from Firestore first
+        let rawQuestions;
+        try {
+            rawQuestions = await loadQuestionsFromFirestore();
+            console.log("Successfully loaded questions from Firestore");
+        } catch (firestoreError) {
+            console.warn(
+                "Failed to load from Firestore, falling back to CSV",
+                firestoreError
+            );
+            rawQuestions = await loadQuestionsFromCSV();
+        }
 
+        // Rest of the function remains the same
         // Extract unique topics
         const uniqueTopics = [...new Set(rawQuestions.map((q) => q.topic))];
 
@@ -74,9 +106,7 @@ let loadedData = { topics: [], questionData: {} };
     try {
         loadedData = await processQuestionData();
         dataLoaded = true;
-        console.log(
-            `Loaded ${loadedData.topics.length} topics with questions from CSV`
-        );
+        console.log(`Loaded ${loadedData.topics.length} topics`);
     } catch (error) {
         console.error("Failed to initialize question data:", error);
     }
