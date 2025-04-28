@@ -1,16 +1,35 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap");
 
 :root {
-    --primary: #4a86e8;
+    --primary: #3498db;
     --primary-dark: #3a76d8;
-    --secondary: #f6b26b;
-    --success: #6aa84f;
-    --error: #cc0000;
+    --secondary: #f9a826;
+    --tertiary: #6ab04c;
+    --success: #6ab04c;
+    --error: #eb4d4b;
     --bg-light: #f5f5f5;
     --bg-dark: #333;
     --text-dark: #333;
-    --text-light: #fff;
-    --border: #ddd;
+    --text-light: #666;
+    --background: #f5f7fa;
+    --card-bg: #ffffff;
+    --border: #dcdde1;
+    --highlight: rgba(52, 152, 219, 0.1);
+}
+
+/* Dark Mode Variables */
+body.dark {
+    --primary: #3498db;
+    --secondary: #f9a826;
+    --tertiary: #7dc75b;
+    --success: #7dc75b;
+    --error: #ff6b6b;
+    --text: #e0e0e0;
+    --text-light: #aaaaaa;
+    --background: #1a1a1a;
+    --card-bg: #2a2a2a;
+    --border: #444444;
+    --highlight: rgba(52, 152, 219, 0.15);
 }
 
 /* Base styles */
@@ -22,16 +41,17 @@
 
 body {
     font-family: "Noto Sans TC", sans-serif;
-    background-color: var(--bg-light);
-    color: var(--text-dark);
+    background-color: var(--background);
+    color: var(--text);
     line-height: 1.6;
+    transition: background-color 0.3s ease;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    background: white;
+    background: var(--card-bg);
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
@@ -157,7 +177,7 @@ input:focus {
 }
 
 .welcome-container {
-    background-color: white;
+    background-color: var(--card-bg);
     border-radius: 10px;
     padding: 40px;
     text-align: center;
@@ -450,7 +470,7 @@ input:focus {
     border-radius: 6px;
     padding: 15px;
     position: relative;
-    background-color: white;
+    background-color: var(--card-bg);
 }
 
 .player-card.host {
@@ -567,7 +587,7 @@ input:focus {
 }
 
 .player-rankings {
-    background-color: white;
+    background-color: var(--card-bg);
     border-radius: 6px;
     padding: 15px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -610,7 +630,7 @@ input:focus {
 }
 
 .question-section {
-    background-color: white;
+    background-color: var(--card-bg);
     border-radius: 6px;
     padding: 20px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -680,7 +700,7 @@ input:focus {
 }
 
 .answer-result {
-    background-color: white;
+    background-color: var(--card-bg);
     border-radius: 6px;
     padding: 20px;
     margin-top: 30px;
@@ -996,7 +1016,7 @@ input:focus {
 }
 
 .other-rankings .ranking-item {
-    background-color: white;
+    background-color: var(--card-bg);
     border-radius: 6px;
     padding: 15px;
     display: flex;
@@ -1113,4 +1133,44 @@ input:focus {
     font-size: 0.8rem;
     font-style: italic;
     color: #666;
+}
+
+/* Theme toggle button styles */
+.theme-toggle-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-button:hover {
+    transform: scale(1.1);
+}
+
+/* Update existing components for dark mode */
+.container,
+.card,
+.player-card,
+.room-card,
+.question-section,
+.player-rankings,
+.ending-screen,
+.modal-content,
+.form-group input,
+.form-group select {
+    background-color: var(--card-bg);
+    color: var(--text);
+    border-color: var(--border);
 }
