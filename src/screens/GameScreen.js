@@ -132,6 +132,7 @@ const GameScreen = () => {
     // Handle user wanting to answer the question
     const handleAnswerQuestion = () => {
         if (!state.answeringPlayerId && !state.showAnswer) {
+            setAnswer("");
             const clientTimestamp = Date.now();
             dispatch({
                 type: "ANSWER_QUESTION",
@@ -153,7 +154,6 @@ const GameScreen = () => {
         setIsSubmitting(true); // Disable button during submission
         clearInterval(timerRef.current);
         dispatch({ type: "SUBMIT_ANSWER", payload: answer.trim() });
-        setAnswer("");
     };
 
     // Handle appeal
@@ -469,7 +469,7 @@ const GameScreen = () => {
                                     {state.answerExplanation && (
                                         <div className="answer-explanation">
                                             <div className="explanation-label">
-                                                Explanation:
+                                                解釋:
                                             </div>
                                             <div className="explanation-text">
                                                 {state.answerExplanation}
