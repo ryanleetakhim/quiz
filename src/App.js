@@ -9,7 +9,6 @@ import RoomScreen from "./screens/RoomScreen";
 import GameScreen from "./screens/GameScreen";
 import EndingScreen from "./screens/EndingScreen";
 import "./styles.css";
-import AdminScreen from "./screens/AdminScreen";
 
 function App() {
     return (
@@ -18,7 +17,6 @@ function App() {
                 <BrowserRouter>
                     <Routes>
                         <Route path="/" element={<WelcomeScreen />} />
-                        <Route path="/aq" element={<AdminScreen />} />
                         <Route path="/host" element={<HostGameScreen />} />
                         <Route path="/join" element={<JoinGameScreen />} />
                         <Route path="/room/:roomId" element={<RoomScreen />} />

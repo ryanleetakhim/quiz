@@ -1,25 +1,5 @@
 import Papa from "papaparse";
 import { useState, useEffect } from "react";
-import { db } from "../config/firebase";
-import { collection, getDocs } from "firebase/firestore";
-
-// Function to load questions from Firestore
-const loadQuestionsFromFirestore = async () => {
-    try {
-        const questionsCollection = collection(db, "questions");
-        const querySnapshot = await getDocs(questionsCollection);
-
-        const questions = [];
-        querySnapshot.forEach((doc) => {
-            questions.push({ id: doc.id, ...doc.data() });
-        });
-
-        return questions;
-    } catch (error) {
-        console.error("Error fetching questions from Firestore:", error);
-        throw error;
-    }
-};
 
 // Fallback to CSV if Firebase fails
 const loadQuestionsFromCSV = async () => {
@@ -48,18 +28,51 @@ const loadQuestionsFromCSV = async () => {
     }
 };
 
+const loadQuestionsFromGoogleSheets = async () => {
+    try {
+        const API_KEY = "AIzaSyAQT1uNmJrDYSwgWAMk1NMou0XuSpvrncA";
+        const SPREADSHEET_ID = "1BcJDKw7gB6uYS0967lcObwAbCCs1Qr5LHghxl0_HFVc";
+        const RANGE = "questions!A2:F";
+
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const rows = data.values;
+
+        if (!rows || rows.length === 0) {
+            throw new Error("No data found in spreadsheet");
+        }
+
+        return rows.map((row) => ({
+            question: row[0],
+            answer: row[1],
+            difficulty: row[2] || "5.0",
+            topic: row[3],
+            subtopic: row[4] || "",
+        }));
+    } catch (error) {
+        console.error("Error fetching questions from Google Sheets:", error);
+        throw error;
+    }
+};
+
 // Process the data from database into our application format
 const processQuestionData = async () => {
     try {
-        // Try to load from Firestore first
+        // Try to load from Google Sheets first
         let rawQuestions;
         try {
-            rawQuestions = await loadQuestionsFromFirestore();
-            console.log("Successfully loaded questions from Firestore");
-        } catch (firestoreError) {
+            rawQuestions = await loadQuestionsFromGoogleSheets();
+            console.log("Successfully loaded questions from Google Sheets");
+        } catch (sheetsError) {
             console.warn(
-                "Failed to load from Firestore, falling back to CSV",
-                firestoreError
+                "Failed to load from Google Sheets, falling back to CSV",
+                sheetsError
             );
             rawQuestions = await loadQuestionsFromCSV();
         }

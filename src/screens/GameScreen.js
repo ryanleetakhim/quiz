@@ -52,7 +52,6 @@ const GameScreen = () => {
     const [answer, setAnswer] = useState("");
     const [timeLeft, setTimeLeft] = useState(null);
     const timerRef = useRef(null);
-    const [loadingError, setLoadingError] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     // Add a ref to always have the current answering state
     const isAnsweringRef = useRef(false);
@@ -80,7 +79,12 @@ const GameScreen = () => {
             clearInterval(timerRef.current);
             setTimeLeft(null);
         }
-    }, [state.answeringPlayerId, state.showAnswer, state.answerTimeLimit]);
+    }, [
+        state.answeringPlayerId,
+        state.showAnswer,
+        state.answerTimeLimit,
+        dispatch,
+    ]);
 
     // Add a function to get better color transitions for the timer
     const getTimerColor = (time) => {
@@ -242,19 +246,7 @@ const GameScreen = () => {
         return (
             <div className="game-screen">
                 <div className="container">
-                    <div className="loading">
-                        載入問題中...
-                        {loadingError && (
-                            <div className="error-message">
-                                無法載入問題。請返回房間並重試。
-                                <button
-                                    onClick={() => window.location.reload()}
-                                >
-                                    重新載入頁面
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    <div className="loading">載入問題中...</div>
                 </div>
             </div>
         );
