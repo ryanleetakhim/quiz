@@ -481,6 +481,8 @@ io.on("connection", (socket) => {
                 answerExplanation: "此問題已被房主跳過。",
             };
 
+            updateQuestionStats(currentQuestion.question, false);
+
             io.to(roomId).emit("answerSubmitted", {
                 gameState: room.gameState,
                 players: room.players,
