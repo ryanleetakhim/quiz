@@ -5,6 +5,8 @@ const path = require("path");
 const { nanoid } = require("nanoid");
 const { checkAnswer } = require("./src/services/geminiService");
 const { GAME_CONSTANTS } = require("./src/utils/constants"); // Import constants
+const { google } = require("googleapis");
+const sheets = google.sheets("v4");
 require("dotenv").config();
 
 const app = express();
@@ -18,6 +20,7 @@ const io = socketIo(server, {
 
 // Serve static files in production
 app.use(express.static(path.join(__dirname, "build")));
+app.use(express.json()); // Add this line to parse JSON request bodies
 
 app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "build", "index.html"));
@@ -351,6 +354,16 @@ io.on("connection", (socket) => {
                 currentQuestion.answer,
                 currentQuestion.question
             );
+
+            // Update question statistics in Google Sheets
+            try {
+                await updateQuestionStats(
+                    currentQuestion.question,
+                    answerCheck.isCorrect
+                );
+            } catch (error) {
+                console.error("Failed to update question statistics:", error);
+            }
         }
 
         // Update player score
@@ -645,6 +658,81 @@ function handlePlayerDisconnect(socket) {
         if (!room.isPrivate && room.gameState.status === "waiting") {
             io.emit("roomList", getPublicRooms());
         }
+    }
+}
+
+// Function to update question statistics in Google Sheets
+async function updateQuestionStats(question, isCorrect) {
+    try {
+        // Load credentials from a service account key file
+        const auth = new google.auth.GoogleAuth({
+            keyFile:
+                process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+                "./service-account-key.json",
+            scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+        });
+
+        const authClient = await auth.getClient();
+        const SPREADSHEET_ID = "1BcJDKw7gB6uYS0967lcObwAbCCs1Qr5LHghxl0_HFVc";
+
+        // First, find the row index of the question
+        const searchResponse = await sheets.spreadsheets.values.get({
+            auth: authClient,
+            spreadsheetId: SPREADSHEET_ID,
+            range: "questions!A2:A",
+        });
+
+        const questions = searchResponse.data.values || [];
+
+        // Find the row with the matching question
+        let rowIndex = -1;
+        for (let i = 0; i < questions.length; i++) {
+            if (questions[i][0] === question) {
+                rowIndex = i + 2; // +2 because we start at row 2 (1-indexed) in the sheet
+                break;
+            }
+        }
+
+        if (rowIndex === -1) {
+            console.warn(`Question not found in spreadsheet: ${question}`);
+            return false;
+        }
+
+        // Now get the current stats for this question
+        const statsRange = `questions!F${rowIndex}:G${rowIndex}`;
+        const statsResponse = await sheets.spreadsheets.values.get({
+            auth: authClient,
+            spreadsheetId: SPREADSHEET_ID,
+            range: statsRange,
+        });
+
+        const currentStats =
+            statsResponse.data.values && statsResponse.data.values[0]
+                ? statsResponse.data.values[0]
+                : [0, 0];
+
+        // Update the stats
+        const attempts = parseInt(currentStats[0] || 0) + 1;
+        const correct = parseInt(currentStats[1] || 0) + (isCorrect ? 1 : 0);
+
+        // Update the spreadsheet
+        await sheets.spreadsheets.values.update({
+            auth: authClient,
+            spreadsheetId: SPREADSHEET_ID,
+            range: statsRange,
+            valueInputOption: "USER_ENTERED",
+            resource: {
+                values: [[attempts, correct]],
+            },
+        });
+
+        console.log(
+            `Updated stats for question: attempts=${attempts}, correct=${correct}`
+        );
+        return true;
+    } catch (error) {
+        console.error("Error updating question statistics:", error);
+        return false;
     }
 }
 

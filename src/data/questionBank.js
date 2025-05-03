@@ -1,6 +1,11 @@
 import Papa from "papaparse";
 import { useState, useEffect } from "react";
 
+// Google Sheets API constants
+const API_KEY = "AIzaSyAQT1uNmJrDYSwgWAMk1NMou0XuSpvrncA";
+const SPREADSHEET_ID = "1BcJDKw7gB6uYS0967lcObwAbCCs1Qr5LHghxl0_HFVc";
+const SHEETS_RANGE = "questions!A2:G";
+
 // Fallback to CSV if Firebase fails
 const loadQuestionsFromCSV = async () => {
     try {
@@ -30,11 +35,7 @@ const loadQuestionsFromCSV = async () => {
 
 const loadQuestionsFromGoogleSheets = async () => {
     try {
-        const API_KEY = "AIzaSyAQT1uNmJrDYSwgWAMk1NMou0XuSpvrncA";
-        const SPREADSHEET_ID = "1BcJDKw7gB6uYS0967lcObwAbCCs1Qr5LHghxl0_HFVc";
-        const RANGE = "questions!A2:F";
-
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEETS_RANGE}?key=${API_KEY}`;
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -54,6 +55,8 @@ const loadQuestionsFromGoogleSheets = async () => {
             difficulty: row[2] || "5.0",
             topic: row[3],
             subtopic: row[4] || "",
+            attempts: parseInt(row[5]) || 0,
+            correct: parseInt(row[6]) || 0,
         }));
     } catch (error) {
         console.error("Error fetching questions from Google Sheets:", error);
